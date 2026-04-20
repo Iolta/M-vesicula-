@@ -226,15 +226,21 @@
       <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">
         Sacá o elegí una foto de la tabla nutricional.
       </p>
-      <input type="file" id="file-input" accept="image/*" style="display:none"
-        onchange="handlePhotoFile(this)">
+      <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoFile(this)">
+      <input type="file" id="file-input-gallery" accept="image/*" style="display:none" onchange="handlePhotoFile(this)">
       <div id="photo-spinner" style="display:none" class="spinner">
         <span class="spin">⏳</span> Leyendo etiqueta…
       </div>
-      <button id="photo-btn" class="photo-drop" onclick="document.getElementById('file-input').click()">
-        <span class="icon">📷</span>
-        <span>Tocar para sacar o elegir foto</span>
-      </button>
+      <div id="photo-btn" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
+        <button class="photo-drop" onclick="document.getElementById('file-input-camera').click()">
+          <span class="icon">📷</span>
+          <span>Sacar foto ahora</span>
+        </button>
+        <button class="photo-drop" onclick="document.getElementById('file-input-gallery').click()">
+          <span class="icon">🖼️</span>
+          <span>Elegir de la galería</span>
+        </button>
+      </div>
       <div id="photo-preview"><img id="preview-img" src="" alt="etiqueta"></div>
       <div id="read-summary" style="display:none" class="read-summary">
         <span id="read-text"></span>
