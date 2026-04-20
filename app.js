@@ -1,392 +1,205 @@
-// ── DEFAULTS ──────────────────────────────────────────────────────────────────
-const DEFAULT_PARAMS = {
-  grasaMaxPorcion: 5,
-  grasaSaturadaMaxPorcion: 2,
-  notas: "Límite de grasa por porción. Ajustá según tu tolerancia personal.",
-  alimentosProhibidos: [
-    "manteca","margarina","crema de leche","crema","nata",
-    "queso cremoso","queso blando","reggianito","provolone","parmesano","gruyere","cheddar","roquefort",
-    "cerdo graso","falda","asado","matambre","cordero","achuras","vísceras","picadillo",
-    "fiambre","chacinado","embutido","salame","chorizo","morcilla","jamón crudo",
-    "frito","fritura","rebozado","empanado",
-    "chocolate","dulce de leche",
-    "maní","maníes","papas fritas","chizitos","palitos",
-    "bebida alcohólica","alcohol","cerveza","vino","gaseosa",
-    "aderezo","mayonesa","ketchup",
-    "pastelería","medialunas","facturas","croissant",
-    "nueces","almendras","frutos secos"
-  ],
-  alimentosPermitidos: [
-    "pollo sin piel","pechuga","merluza","lenguado","pescadilla","brótola","corvina",
-    "arroz","fideos","pasta","pan francés","mignón","tostado",
-    "zanahoria","calabaza","zapallo","zapallito","remolacha","papa hervida","batata hervida",
-    "manzana","pera","durazno","damasco",
-    "leche descremada","yogur descremado","ricota descremada",
-    "claras","huevo poché","huevo duro",
-    "aceite de oliva crudo","aceite en spray",
-    "mermelada","miel",
-    "té","mate cocido","manzanilla","infusión"
-  ],
-  advertencias: [
-    "brócoli","coliflor","repollo","repollito","cebolla","ajo",
-    "legumbres","lentejas","garbanzos","porotos",
-    "huevo entero","yema",
-    "atún en aceite","salmón","caballa",
-    "jamón cocido","jamón del país"
-  ]
-};
+// ── STORAGE KEY ───────────────────────────────────────────────────────────────
+const STORAGE_KEY = "vesicula_v3";
 
-const STORAGE_KEY = "vesicula_params_v2";
+// ── BASE DE ALIMENTOS ─────────────────────────────────────────────────────────
+// nivel: "verde" | "amarillo" | "rojo"
+// umbrales: si grasa_por_porcion < umbralBajar → baja un nivel
+// categoria: grasa-saturada | irritante | flatulento | picante | alcohol | procesado | lácteo
+const DEFAULT_ALIMENTOS = [
 
-function loadParams() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return JSON.parse(JSON.stringify(DEFAULT_PARAMS));
-}
+  // ── LÁCTEOS ──
+  { id:"a001", nombre:"Leche entera", sinonimos:["leche","leche común","leche fluida"], categoria:"lácteo", nivel:"rojo",
+    umbralBajar: null, nota:"Alta en grasa saturada. Reemplazar siempre por descremada." },
+  { id:"a002", nombre:"Leche descremada", sinonimos:["leche desnatada","leche light"], categoria:"lácteo", nivel:"verde",
+    umbralBajar: null, nota:"Sin restricción. Preferida frente a cualquier lácteo entero." },
+  { id:"a003", nombre:"Yogur descremado", sinonimos:["yogurt descremado","yogur light"], categoria:"lácteo", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerado. Preferir sin frutas azucaradas." },
+  { id:"a004", nombre:"Crema de leche", sinonimos:["nata","crema","cream"], categoria:"lácteo", nivel:"rojo",
+    umbralBajar: 2, nota:"Muy alta en grasa saturada. En cantidades menores a 2g por porción puede tolerarse ocasionalmente en preparaciones." },
+  { id:"a005", nombre:"Manteca", sinonimos:["butter","mantequilla"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: 3, nota:"Grasa saturada pura. Menos de 3g en una preparación puede tolerarse; más de eso es problemático para la vesícula." },
+  { id:"a006", nombre:"Margarina", sinonimos:["margarina vegetal"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Grasas trans y saturadas. Evitar siempre. No tiene umbral seguro." },
+  { id:"a007", nombre:"Ricota descremada", sinonimos:["ricotta descremada"], categoria:"lácteo", nivel:"verde",
+    umbralBajar: null, nota:"Excelente opción. Baja en grasa, fácil digestión." },
+  { id:"a008", nombre:"Queso untable descremado", sinonimos:["queso crema light","casancrem diet","mendicrim light"], categoria:"lácteo", nivel:"verde",
+    umbralBajar: null, nota:"Permitido. Verificar que sea versión light/descremada." },
+  { id:"a009", nombre:"Queso duro", sinonimos:["reggianito","parmesano","gruyere","provolone","cheddar","roquefort","mar del plata","pategrás"], categoria:"lácteo", nivel:"rojo",
+    umbralBajar: 5, nota:"Alto en grasa saturada. Menos de 5g total en la preparación puede tolerarse esporádicamente como condimento." },
+  { id:"a010", nombre:"Queso blando", sinonimos:["cuartirolo","port salut","mozzarella"], categoria:"lácteo", nivel:"amarillo",
+    umbralBajar: null, nota:"Moderado en grasa. Cantidad pequeña como acompañamiento es aceptable; no como plato principal." },
 
-function saveParamsToStorage(p) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch {}
-}
+  // ── CARNES ──
+  { id:"b001", nombre:"Pechuga de pollo", sinonimos:["pollo sin piel","pechuga","pollo a la plancha","pollo hervido"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Carne magra ideal. Siempre sin piel y sin fritura." },
+  { id:"b002", nombre:"Pollo con piel", sinonimos:["pollo entero","pollo a la parrilla con piel"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"La piel concentra toda la grasa. Retirarla siempre antes de comer." },
+  { id:"b003", nombre:"Merluza", sinonimos:["pescadilla","merluza negra"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Pescado blanco ideal. Hervida, al vapor o a la plancha sin aceite." },
+  { id:"b004", nombre:"Lenguado", sinonimos:["linguado"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Muy bajo en grasa. Excelente opción." },
+  { id:"b005", nombre:"Corvina", sinonimos:["brótola","pejerrey","palometa"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Pescados blancos del río/mar, todos permitidos." },
+  { id:"b006", nombre:"Atún en agua", sinonimos:["atún al natural"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerado. Siempre elegir al natural, no en aceite." },
+  { id:"b007", nombre:"Atún en aceite", sinonimos:["atún en aceite de oliva","atún en aceite girasol"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"El aceite suma grasa significativa. Escurrir muy bien. Ocasionalmente y en poca cantidad." },
+  { id:"b008", nombre:"Salmón", sinonimos:["trucha","salmon rosado"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"Pescado graso. Rico en omega-3 pero puede estimular la vesícula. Porción pequeña, no más de 2 veces por semana." },
+  { id:"b009", nombre:"Vacuno magro", sinonimos:["lomo","cuadrada","peceto","nalga","bola de lomo"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Cortes magros bien tolerados. Siempre desgrasado, a la plancha o hervido." },
+  { id:"b010", nombre:"Carne grasa", sinonimos:["asado","falda","matambre","costilla","bife de chorizo","entrecote","vacío"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Cortes con alto contenido graso. Estimulan fuertemente la contracción de la vesícula. Evitar." },
+  { id:"b011", nombre:"Cerdo", sinonimos:["bondiola","lomo de cerdo","carré","costeleta de cerdo"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"El lomo de cerdo magro puede tolerarse ocasionalmente. El resto de los cortes tiene demasiada grasa." },
+  { id:"b012", nombre:"Cordero", sinonimos:["corderito","cordero patagónico","chivito"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Carne muy grasa. Evitar siempre." },
+  { id:"b013", nombre:"Achuras", sinonimos:["vísceras","riñón","hígado","chinchulines","molleja","mondongo"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Muy alto en colesterol y grasa saturada. Prohibido." },
+  { id:"b014", nombre:"Jamón cocido", sinonimos:["jamón del país","paleta cocida"], categoria:"procesado", nivel:"amarillo",
+    umbralBajar: null, nota:"Magro y bajo en grasa si es de buena calidad. En cantidad moderada y sin combinar con otros grasos." },
+  { id:"b015", nombre:"Fiambre", sinonimos:["salame","chorizo seco","longaniza","mortadela","paté","picadillo","leberwurst"], categoria:"procesado", nivel:"rojo",
+    umbralBajar: null, nota:"Alta grasa saturada, sal y aditivos. Evitar todos los embutidos y chacinados." },
 
-let params = loadParams();
+  // ── PREPARACIONES ──
+  { id:"c001", nombre:"Frito", sinonimos:["fritura","rebozado","empanado","milanesa frita","papas fritas"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Cualquier fritura es problemática independientemente del ingrediente base. El método de cocción es determinante." },
+  { id:"c002", nombre:"Milanesa al horno", sinonimos:["milanesa de pollo al horno","milanesa de pescado al horno"], categoria:"proteína", nivel:"amarillo",
+    umbralBajar: null, nota:"Aceptable si es de pollo o pescado, al horno con mínimo aceite. No frita." },
+  { id:"c003", nombre:"Estofado", sinonimos:["guiso","locro","cazuela"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"Depende de los ingredientes. Sin carnes grasas ni chorizo puede tolerarse." },
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
-function parseNum(val) {
-  if (val === null || val === undefined || val === "") return 0;
-  return parseFloat(String(val).replace(",", ".")) || 0;
-}
+  // ── LÁCTEOS/HUEVO ──
+  { id:"d001", nombre:"Huevo entero", sinonimos:["huevo","huevo frito","huevo revuelto"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"La yema tiene colesterol y grasa. Máximo 2-3 por semana, nunca frito. Poché o duro preferido." },
+  { id:"d002", nombre:"Clara de huevo", sinonimos:["claras","albumina"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Sin grasa. Sin restricción." },
 
-function normalize(str) {
-  return str.toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ");
-}
+  // ── PANIFICADOS Y HARINAS ──
+  { id:"e001", nombre:"Pan francés", sinonimos:["baguette","pan de agua","flauta"], categoria:"cereal", nivel:"verde",
+    umbralBajar: null, nota:"Preferido tostado. Sin manteca." },
+  { id:"e002", nombre:"Pan de molde light", sinonimos:["pan lactal light","pan lactal descremado"], categoria:"cereal", nivel:"verde",
+    umbralBajar: null, nota:"Aceptable. Revisar que tenga bajo contenido graso." },
+  { id:"e003", nombre:"Facturas", sinonimos:["medialunas","croissant","vigilantes","cuernitos","pastelería","bizcochos"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Elaborados con manteca o margarina. Evitar siempre." },
+  { id:"e004", nombre:"Arroz", sinonimos:["arroz blanco","arroz integral"], categoria:"cereal", nivel:"verde",
+    umbralBajar: null, nota:"Excelente base. Bien tolerado." },
+  { id:"e005", nombre:"Pasta", sinonimos:["fideos","tallarines","spaghetti","ñoquis de papa","macarrones"], categoria:"cereal", nivel:"verde",
+    umbralBajar: null, nota:"Permitida con salsas bajas en grasa. Evitar con crema o manteca." },
+  { id:"e006", nombre:"Galletitas de agua", sinonimos:["crackers","galletas de arroz"], categoria:"cereal", nivel:"verde",
+    umbralBajar: null, nota:"Las versiones sin grasa o con aceite vegetal son aceptables. Revisar etiqueta." },
 
-// ── ANALYSIS ──────────────────────────────────────────────────────────────────
-function analyzeLabel(grasa, grasaSat, porcionGramos, cantidadGramos) {
-  const g = parseNum(grasa);
-  const gs = parseNum(grasaSat);
-  const porcion = parseNum(porcionGramos) || null;
-  const cantidad = parseNum(cantidadGramos) || null;
+  // ── VEGETALES ──
+  { id:"f001", nombre:"Zanahoria", sinonimos:["zanahoria hervida","zanahoria rallada"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Muy bien tolerada. Sin restricción." },
+  { id:"f002", nombre:"Zapallo", sinonimos:["calabaza","zapallito","zucchini","zapallo anco"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Excelente. Hervido o al horno." },
+  { id:"f003", nombre:"Papa", sinonimos:["papa hervida","puré de papa","papa al horno"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerada hervida o al horno. Nunca frita." },
+  { id:"f004", nombre:"Batata", sinonimos:["boniato","camote","batata hervida"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerada. Hervida o al horno." },
+  { id:"f005", nombre:"Remolacha", sinonimos:["betarraga","beet"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Permitida. Cocida preferible." },
+  { id:"f006", nombre:"Cebolla", sinonimos:["cebolla de verdeo","cebolla morada","cebollita"], categoria:"irritante", nivel:"amarillo",
+    umbralBajar: null, nota:"Puede generar gases y molestias. Cocida es mejor tolerada que cruda. En pequeña cantidad." },
+  { id:"f007", nombre:"Ajo", sinonimos:["ajo picado","ajo en polvo"], categoria:"irritante", nivel:"amarillo",
+    umbralBajar: null, nota:"Irritante en algunas personas. Como condimento en poca cantidad, generalmente tolerable." },
+  { id:"f008", nombre:"Brócoli", sinonimos:["brocoli"], categoria:"flatulento", nivel:"amarillo",
+    umbralBajar: null, nota:"Nutritivo pero puede generar gases. Bien cocido y en porción moderada." },
+  { id:"f009", nombre:"Coliflor", sinonimos:["coliflor hervida"], categoria:"flatulento", nivel:"amarillo",
+    umbralBajar: null, nota:"Similar al brócoli. Evitar cruda, bien cocida en poca cantidad." },
+  { id:"f010", nombre:"Repollo", sinonimos:["col","repollito de bruselas","lombarda"], categoria:"flatulento", nivel:"rojo",
+    umbralBajar: null, nota:"Muy flatulento. Puede provocar cólicos por distensión. Mejor evitar." },
+  { id:"f011", nombre:"Tomate", sinonimos:["tomate perita","tomate triturado"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerado cocido. Crudo en pequeña cantidad generalmente sin problema." },
+  { id:"f012", nombre:"Espinaca", sinonimos:["espinaca hervida","acelga"], categoria:"vegetal", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerada cocida." },
 
-  if (g === 0) return { estado: "si", razon: "Sin grasa declarada. Está bien.", color: "green" };
+  // ── FRUTAS ──
+  { id:"g001", nombre:"Manzana", sinonimos:["manzana verde","manzana roja","compota de manzana"], categoria:"fruta", nivel:"verde",
+    umbralBajar: null, nota:"Muy bien tolerada. Sin cáscara si hay sensibilidad." },
+  { id:"g002", nombre:"Pera", sinonimos:["pera williams","pera de agua"], categoria:"fruta", nivel:"verde",
+    umbralBajar: null, nota:"Excelente. Madura y sin cáscara." },
+  { id:"g003", nombre:"Durazno", sinonimos:["melocotón","pelón","durazno en almíbar"], categoria:"fruta", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerado. En almíbar light también." },
+  { id:"g004", nombre:"Banana", sinonimos:["plátano","banana madura"], categoria:"fruta", nivel:"verde",
+    umbralBajar: null, nota:"Madura es muy bien tolerada. No verde." },
+  { id:"g005", nombre:"Naranja", sinonimos:["mandarina","clementina","jugo de naranja"], categoria:"fruta", nivel:"amarillo",
+    umbralBajar: null, nota:"El ácido puede molestar en algunas personas. Diluido o en pequeña cantidad." },
+  { id:"g006", nombre:"Palta", sinonimos:["aguacate","avocado"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"Rica en grasa saludable pero estimula la vesícula. Un cuarto de palta madura puede tolerarse." },
+  { id:"g007", nombre:"Coco", sinonimos:["aceite de coco","leche de coco","coco rallado"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Altísimo en grasa saturada. Evitar todas las formas." },
 
-  let gReal = g, gsReal = gs, cantidadNota = "";
-  if (porcion && cantidad && porcion > 0) {
-    const factor = cantidad / porcion;
-    gReal = parseFloat((g * factor).toFixed(1));
-    gsReal = parseFloat((gs * factor).toFixed(1));
-    cantidadNota = ` en ${cantidad}g`;
-  }
+  // ── LEGUMBRES ──
+  { id:"h001", nombre:"Lentejas", sinonimos:["lentejas cocidas","sopa de lentejas"], categoria:"flatulento", nivel:"amarillo",
+    umbralBajar: null, nota:"Bien toleradas si están muy cocidas y sin chorizo. Pueden generar gases. Empezar con poca cantidad." },
+  { id:"h002", nombre:"Garbanzos", sinonimos:["hummus","garbanzo cocido"], categoria:"flatulento", nivel:"amarillo",
+    umbralBajar: null, nota:"Similar a lentejas. Muy cocidos y en poca cantidad." },
+  { id:"h003", nombre:"Porotos", sinonimos:["frijoles","alubias","judías","porotos negros"], categoria:"flatulento", nivel:"amarillo",
+    umbralBajar: null, nota:"Flatulentos. Tolerar según respuesta personal, muy cocidos." },
 
-  const porcionesMax = porcion
-    ? Math.round(params.grasaMaxPorcion / g * porcion)
-    : null;
-  const porcionesLabel = porcionesMax ? ` Podés comer hasta ~${porcionesMax}g.` : "";
+  // ── ACEITES Y GRASAS ──
+  { id:"i001", nombre:"Aceite de oliva", sinonimos:["aceite de oliva extra virgen","aove"], categoria:"grasa-saludable", nivel:"verde",
+    umbralBajar: null, nota:"La mejor grasa para esta dieta. Siempre crudo, máximo 2 cucharadas por día." },
+  { id:"i002", nombre:"Aceite de girasol", sinonimos:["aceite vegetal","aceite de maíz","aceite de soja"], categoria:"grasa-saludable", nivel:"verde",
+    umbralBajar: null, nota:"Aceptable crudo y en pequeña cantidad. No calentar en exceso." },
+  { id:"i003", nombre:"Aceite en spray", sinonimos:["cooking spray","rociador de aceite"], categoria:"grasa-saludable", nivel:"verde",
+    umbralBajar: null, nota:"Ideal para cocinar sin acumular grasa." },
 
-  const issues = [];
-  if (gReal > params.grasaMaxPorcion)
-    issues.push(`Grasa total (${gReal}g${cantidadNota}) supera tu límite de ${params.grasaMaxPorcion}g.`);
-  if (gsReal > params.grasaSaturadaMaxPorcion)
-    issues.push(`Grasa saturada (${gsReal}g${cantidadNota}) supera tu límite de ${params.grasaSaturadaMaxPorcion}g.`);
+  // ── DULCES ──
+  { id:"j001", nombre:"Chocolate", sinonimos:["cacao","chocolate negro","chocolate con leche","chocolate blanco"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: 5, nota:"Alto en grasa y estimulante biliar. Un cuadradito de chocolate negro (menos de 5g grasa) puede tolerarse muy ocasionalmente." },
+  { id:"j002", nombre:"Dulce de leche", sinonimos:["dulce de leche repostero","cajeta"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Combina grasa y azúcar de forma problemática. Evitar." },
+  { id:"j003", nombre:"Mermelada", sinonimos:["confitura","jalea de frutas"], categoria:"dulce", nivel:"verde",
+    umbralBajar: null, nota:"Sin grasa. Permitida en cantidad moderada." },
+  { id:"j004", nombre:"Miel", sinonimos:["honey"], categoria:"dulce", nivel:"verde",
+    umbralBajar: null, nota:"Sin grasa. Permitida." },
+  { id:"j005", nombre:"Helado", sinonimos:["helado de crema","ice cream"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Base de crema y azúcar. Evitar. Excepción: helado de agua o sorbete." },
+  { id:"j006", nombre:"Sorbete", sinonimos:["helado de agua","granizado"], categoria:"dulce", nivel:"verde",
+    umbralBajar: null, nota:"Sin grasa. Permitido." },
 
-  if (issues.length === 0) {
-    const base = cantidad
-      ? `${cantidad}g tienen ${gReal}g de grasa. Dentro del límite.`
-      : `${g}g de grasa por porción. Dentro del límite.`;
-    return { estado: "si", razon: base + porcionesLabel, color: "green" };
-  }
+  // ── SNACKS ──
+  { id:"k001", nombre:"Papas fritas de paquete", sinonimos:["chips","snacks de papa","pringles"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"Fritas y con mucha sal. Evitar siempre." },
+  { id:"k002", nombre:"Maní", sinonimos:["cacahuate","peanut","mantequilla de maní"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: 5, nota:"Alto en grasa. Un puñadito pequeño (menos de 5g grasa total) puede tolerarse, pero con precaución." },
+  { id:"k003", nombre:"Nueces", sinonimos:["almendras","castañas de cajú","pistachos","avellanas","frutos secos"], categoria:"grasa-saturada", nivel:"amarillo",
+    umbralBajar: null, nota:"Grasa saludable pero en cantidad significativa. Máximo 4-5 nueces o 10 almendras por día." },
 
-  const ratio = params.grasaMaxPorcion / gReal;
-  if (ratio >= 0.5) {
-    const sugerencia = porcion
-      ? ` Reducí a ~${Math.round(porcion * ratio)}g.`
-      : " Considerá una porción más chica.";
-    return { estado: "cuidado", razon: issues.join(" ") + sugerencia, color: "amber" };
-  }
-  return { estado: "no", razon: issues.join(" ") + porcionesLabel, color: "red" };
-}
+  // ── BEBIDAS ──
+  { id:"l001", nombre:"Alcohol", sinonimos:["cerveza","vino","fernet","whisky","licor","bebida alcohólica"], categoria:"alcohol", nivel:"rojo",
+    umbralBajar: null, nota:"El alcohol estimula directamente la vesícula y puede desencadenar cólicos. Evitar siempre." },
+  { id:"l002", nombre:"Gaseosa", sinonimos:["refresco","coca cola","pepsi","bebida con gas","soda con sabor"], categoria:"irritante", nivel:"rojo",
+    umbralBajar: null, nota:"El gas distiende el sistema digestivo y puede provocar molestias. Evitar." },
+  { id:"l003", nombre:"Agua con gas", sinonimos:["soda","agua gasificada","agua mineral con gas"], categoria:"irritante", nivel:"amarillo",
+    umbralBajar: null, nota:"El gas puede molestar. Preferir agua sin gas. Tolerable en pequeña cantidad para algunas personas." },
+  { id:"l004", nombre:"Café", sinonimos:["espresso","café con leche","cappuccino"], categoria:"irritante", nivel:"amarillo",
+    umbralBajar: null, nota:"Estimula la contracción de la vesícula. Un café liviano por día puede tolerarse. Evitar en exceso." },
+  { id:"l005", nombre:"Té", sinonimos:["té verde","té negro","té de hierbas"], categoria:"infusión", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerado. Preferir suave." },
+  { id:"l006", nombre:"Mate", sinonimos:["mate cocido","yerba mate"], categoria:"infusión", nivel:"verde",
+    umbralBajar: null, nota:"Bien tolerado. El mate cocido es más suave que el mate directo." },
+  { id:"l007", nombre:"Jugos de fruta naturales", sinonimos:["jugo de naranja","jugo de manzana","licuado de fruta"], categoria:"fruta", nivel:"verde",
+    umbralBajar: null, nota:"Permitidos, colados y diluidos con agua. Sin azúcar agregada." },
 
-// Devuelve true si la palabra `word` aparece en `text` pero NO está negada
-// (precedida por sin / no / sin llevar / no tiene / no lleva / libre de, etc.)
-function mentionedPositively(text, word) {
-  const t = normalize(text);
-  const w = normalize(word);
-  const idx = t.indexOf(w);
-  if (idx === -1) return false;
-  // Tomamos hasta 30 chars antes del match para buscar negaciones
-  const before = t.slice(Math.max(0, idx - 30), idx);
-  const negations = ["sin ", "no ", "libre de", "sin llevar", "no tiene", "no lleva", "no contiene", "sin contener"];
-  return !negations.some(neg => before.includes(neg));
-}
+  // ── CONDIMENTOS ──
+  { id:"m001", nombre:"Mayonesa", sinonimos:["mayo","alioli"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: 3, nota:"Base de aceite y yema. Alta en grasa. Menos de 3g (una cucharadita rasa) en una preparación es el límite si no hay otra fuente grasa." },
+  { id:"m002", nombre:"Ketchup", sinonimos:["salsa de tomate dulce"], categoria:"procesado", nivel:"amarillo",
+    umbralBajar: null, nota:"Bajo en grasa pero con azúcar. En pequeña cantidad como condimento es aceptable." },
+  { id:"m003", nombre:"Mostaza", sinonimos:["dijon","mostaza americana"], categoria:"condimento", nivel:"verde",
+    umbralBajar: null, nota:"Sin grasa. Permitida." },
+  { id:"m004", nombre:"Sal", sinonimos:["sal fina","sal gruesa"], categoria:"condimento", nivel:"verde",
+    umbralBajar: null, nota:"Sin restricción por vesícula. Moderación por salud general." },
+  { id:"m005", nombre:"Picante", sinonimos:["ají molido","pimienta","pimentón picante","tabasco","sriracha","chile"], categoria:"picante", nivel:"amarillo",
+    umbralBajar: null, nota:"El picante puede irritar la mucosa y estimular la vesícula. En muy pequeña cantidad como condimento." },
 
-function analyzeText(text) {
-  for (const p of params.alimentosProhibidos) {
-    if (mentionedPositively(text, p))
-      return { estado: "no", razon: `Contiene "${p}", que está en tu lista de evitar.`, color: "red" };
-  }
-  for (const p of params.advertencias) {
-    if (mentionedPositively(text, p))
-      return { estado: "cuidado", razon: `"${p}" puede generar molestias. Con moderación.`, color: "amber" };
-  }
-  for (const p of params.alimentosPermitidos) {
-    if (mentionedPositively(text, p))
-      return { estado: "si", razon: `"${p}" está en tu lista de permitidos.`, color: "green" };
-  }
-  return { estado: "consulta", razon: "No encontré este alimento en tus listas. Consultando…", color: "blue" };
-}
-
-// ── RENDER RESULT ─────────────────────────────────────────────────────────────
-const ICONS  = { si: "✓", no: "✕", cuidado: "⚠", consulta: "?" };
-const LABELS = { si: "Podés comerlo", no: "Evitalo", cuidado: "Con moderación", consulta: "Sin datos suficientes" };
-
-function renderResult(containerId, result) {
-  const el = document.getElementById(containerId);
-  el.innerHTML = `
-    <div class="result ${result.color}">
-      <div class="result-header">
-        <span class="result-icon">${ICONS[result.estado]}</span>
-        <span class="result-label">${LABELS[result.estado]}</span>
-      </div>
-      <p class="result-text">${result.razon}</p>
-    </div>`;
-}
-
-// ── TAB / MODE SWITCHING ──────────────────────────────────────────────────────
-function switchTab(tab) {
-  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById("panel-" + tab).classList.add("active");
-  const btns = document.querySelectorAll(".tab-btn");
-  const map = { scan: 0, describe: 1, config: 2 };
-  btns[map[tab]].classList.add("active");
-  if (tab === "config") loadConfigForm();
-}
-
-function switchMode(mode) {
-  document.getElementById("mode-manual").style.display = mode === "manual" ? "block" : "none";
-  document.getElementById("mode-photo").style.display  = mode === "photo"  ? "block" : "none";
-  document.querySelectorAll(".mode-btn").forEach((b, i) => {
-    b.classList.toggle("active", (i === 0 && mode === "manual") || (i === 1 && mode === "photo"));
-  });
-  document.getElementById("result-scan").innerHTML = "";
-}
-
-// ── SCAN MANUAL ───────────────────────────────────────────────────────────────
-function handleScan() {
-  const grasa   = document.getElementById("grasa").value;
-  const grasaSat= document.getElementById("grasaSat").value;
-  const porcion = document.getElementById("porcion").value;
-  const cantidad= document.getElementById("cantidad").value;
-  if (!grasa) return;
-  const result = analyzeLabel(grasa, grasaSat, porcion, cantidad);
-  renderResult("result-scan", result);
-}
-
-// ── SCAN PHOTO ────────────────────────────────────────────────────────────────
-let photoGrasa = "", photoGrasaSat = "", photoPorcion = "";
-
-function handlePhotoFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  // Preview
-  const url = URL.createObjectURL(file);
-  document.getElementById("preview-img").src = url;
-  document.getElementById("photo-btn").style.display = "none";
-  document.getElementById("photo-spinner").style.display = "flex";
-  document.getElementById("read-summary").style.display = "none";
-  document.getElementById("photo-cantidad-wrap").style.display = "none";
-  document.getElementById("result-scan").innerHTML = "";
-
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const base64 = reader.result.split(",")[1];
-    const mimeType = file.type || "image/jpeg";
-    try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } },
-              { type: "text", text: `Analizá esta etiqueta nutricional. Extraé los valores POR PORCIÓN: grasa total, grasa saturada (en gramos), y tamaño de porción en gramos si está visible. Respondé SOLO con JSON sin markdown ni backticks: {"grasaTotal": número o null, "grasaSaturada": número o null, "porcionGramos": número o null}` }
-            ]
-          }]
-        })
-      });
-      const data = await resp.json();
-      const text = (data.content || []).find(b => b.type === "text")?.text || "";
-      const clean = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-
-      if (parsed.grasaTotal !== null && parsed.grasaTotal !== undefined) {
-        photoGrasa    = String(parsed.grasaTotal ?? "");
-        photoGrasaSat = String(parsed.grasaSaturada ?? "");
-        photoPorcion  = String(parsed.porcionGramos ?? "");
-
-        let summary = `Grasa ${photoGrasa}g`;
-        if (photoGrasaSat) summary += ` · Sat. ${photoGrasaSat}g`;
-        if (photoPorcion)  summary += ` · Porción ${photoPorcion}g`;
-        document.getElementById("read-text").textContent = summary;
-        document.getElementById("read-summary").style.display = "flex";
-        document.getElementById("photo-cantidad-wrap").style.display = "block";
-
-        // Auto-analyze
-        handleScanFromPhoto();
-      } else {
-        renderResult("result-scan", { estado: "consulta", razon: "No pude leer los valores. Usá el modo manual.", color: "blue" });
-        switchMode("manual");
-      }
-    } catch (e) {
-      renderResult("result-scan", { estado: "consulta", razon: "Error al leer la imagen. Intentá de nuevo o usá el modo manual.", color: "blue" });
-    }
-    document.getElementById("photo-spinner").style.display = "none";
-    input.value = "";
-  };
-  reader.readAsDataURL(file);
-}
-
-function handleScanFromPhoto() {
-  const cantidad = document.getElementById("cantidad-photo").value;
-  const result = analyzeLabel(photoGrasa, photoGrasaSat, photoPorcion, cantidad);
-  renderResult("result-scan", result);
-}
-
-function resetPhoto() {
-  photoGrasa = ""; photoGrasaSat = ""; photoPorcion = "";
-  document.getElementById("photo-preview").style.display = "none";
-  document.getElementById("photo-btn").style.display = "flex";
-  document.getElementById("read-summary").style.display = "none";
-  document.getElementById("photo-cantidad-wrap").style.display = "none";
-  document.getElementById("result-scan").innerHTML = "";
-  document.getElementById("cantidad-photo").value = "";
-  document.getElementById("file-input-camera").value = "";
-  document.getElementById("file-input-gallery").value = "";
-}
-
-// ── DESCRIBE ──────────────────────────────────────────────────────────────────
-async function handleDescribe() {
-  const description = document.getElementById("description").value.trim();
-  if (!description) return;
-
-  const btn = document.getElementById("btn-describe");
-  btn.disabled = true;
-  btn.textContent = "Consultando…";
-  document.getElementById("result-describe").innerHTML = "";
-
-  const local = analyzeText(description);
-  if (local.estado === "si" || local.estado === "no") {
-    renderResult("result-describe", local);
-    btn.disabled = false;
-    btn.textContent = "Consultar";
-    return;
-  }
-
-  try {
-    const sysPrompt = `Eres un asistente dietético especializado en dieta hipograsa para vesícula biliar con cálculos (sin cólicos recurrentes).
-Alimentos PROHIBIDOS: ${params.alimentosProhibidos.join(", ")}.
-Alimentos a CUIDAR (moderación): ${params.advertencias.join(", ")}.
-Alimentos PERMITIDOS: ${params.alimentosPermitidos.join(", ")}.
-Límite de grasa: ${params.grasaMaxPorcion}g por porción.
-Regla: bajo en grasas saturadas, sin fritos, sin lácteos enteros, sin carnes grasas. Pescado blanco MUY bien. Sushi de pescado blanco con arroz permitido.
-Respondé SOLO con JSON sin markdown: {"estado":"si"|"no"|"cuidado","razon":"explicación breve en español"}`;
-
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        system: sysPrompt,
-        messages: [{ role: "user", content: `¿Puedo comer esto? ${description}` }]
-      })
-    });
-    const data = await resp.json();
-    const text = (data.content || []).find(b => b.type === "text")?.text || "";
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
-    const colorMap = { si: "green", no: "red", cuidado: "amber" };
-    renderResult("result-describe", { ...parsed, color: colorMap[parsed.estado] || "blue" });
-  } catch {
-    renderResult("result-describe", local);
-  }
-
-  btn.disabled = false;
-  btn.textContent = "Consultar";
-}
-
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-function loadConfigForm() {
-  document.getElementById("cfg-grasa").value    = params.grasaMaxPorcion;
-  document.getElementById("cfg-grasaSat").value = params.grasaSaturadaMaxPorcion;
-  document.getElementById("cfg-prohibidos").value   = params.alimentosProhibidos.join(", ");
-  document.getElementById("cfg-advertencias").value = params.advertencias.join(", ");
-  document.getElementById("cfg-permitidos").value   = params.alimentosPermitidos.join(", ");
-  document.getElementById("cfg-notas").value        = params.notas;
-}
-
-function saveConfig() {
-  params = {
-    grasaMaxPorcion: parseNum(document.getElementById("cfg-grasa").value) || 5,
-    grasaSaturadaMaxPorcion: parseNum(document.getElementById("cfg-grasaSat").value) || 2,
-    notas: document.getElementById("cfg-notas").value,
-    alimentosProhibidos: document.getElementById("cfg-prohibidos").value.split(",").map(s=>s.trim()).filter(Boolean),
-    advertencias: document.getElementById("cfg-advertencias").value.split(",").map(s=>s.trim()).filter(Boolean),
-    alimentosPermitidos: document.getElementById("cfg-permitidos").value.split(",").map(s=>s.trim()).filter(Boolean),
-  };
-  saveParamsToStorage(params);
-  switchTab("scan");
-  updateFooter();
-}
-
-function resetConfig() {
-  if (!confirm("¿Restaurar todos los parámetros a los valores originales?")) return;
-  params = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
-  saveParamsToStorage(params);
-  loadConfigForm();
-  updateFooter();
-}
-
-function updateFooter() {
-  document.getElementById("footer-note").textContent = params.notas || "";
-}
-
-// ── PWA INSTALL ───────────────────────────────────────────────────────────────
-let deferredPrompt = null;
-
-window.addEventListener("beforeinstallprompt", e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById("install-banner").style.display = "flex";
-});
-
-function installApp() {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(() => {
-    deferredPrompt = null;
-    dismissInstall();
-  });
-}
-
-function dismissInstall() {
-  document.getElementById("install-banner").style.display = "none";
-}
-
-window.addEventListener("appinstalled", () => dismissInstall());
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-updateFooter();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-  });
-}
+  // ── SUSHI / PREPARACIONES ESPECIALES ──
+  { id:"n001", nombre:"Sushi de pescado blanco", sinonimos:["sushi de merluza","sushi de lenguado","nigiri de pescado blanco"], categoria:"proteína", nivel:"verde",
+    umbralBajar: null, nota:"Arroz con pescado blanco y alga. Sin mayonesa ni salsa grasa. Excelente opción." },
+  { id:"n002", nombre:"Sushi con mayonesa", sinonimos:["sushi spicy","roll con mayo","philadelphia roll","tartar roll"], categoria:"grasa-saturada", nivel:"rojo",
+    umbralBajar: null, nota:"La mayonesa suma grasa significativa. Evitar rolls con salsas cremosas." },
+  { id:"n003", nombre:"Sushi de salmón", sinonimos:["nigiri de salmón","salmon roll"], categori
