@@ -195,7 +195,6 @@ function handlePhotoFile(input) {
   // Preview
   const url = URL.createObjectURL(file);
   document.getElementById("preview-img").src = url;
-  document.getElementById("photo-preview").style.display = "block";
   document.getElementById("photo-btn").style.display = "none";
   document.getElementById("photo-spinner").style.display = "flex";
   document.getElementById("read-summary").style.display = "none";
@@ -268,6 +267,8 @@ function resetPhoto() {
   document.getElementById("photo-cantidad-wrap").style.display = "none";
   document.getElementById("result-scan").innerHTML = "";
   document.getElementById("cantidad-photo").value = "";
+  document.getElementById("file-input-camera").value = "";
+  document.getElementById("file-input-gallery").value = "";
 }
 
 // ── DESCRIBE ──────────────────────────────────────────────────────────────────
@@ -389,5 +390,3 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
 }
-
-
