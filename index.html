@@ -14,171 +14,114 @@
   <title>Mi Vesícula</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Georgia, serif;
-      background: #faf9f7;
-      color: #3d3530;
-      min-height: 100vh;
-      padding-bottom: 40px;
-    }
-    #app {
-      max-width: 440px;
-      margin: 0 auto;
-      padding: 24px 16px;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
-    header .emoji { font-size: 32px; display: block; margin-bottom: 4px; }
-    header h1 { font-size: 22px; font-weight: 700; color: #3d3530; letter-spacing: -0.5px; }
-    header p { font-size: 13px; color: #9b8d84; font-style: italic; margin-top: 3px; }
+    body { font-family: Georgia, serif; background: #faf9f7; color: #3d3530; min-height: 100vh; padding-bottom: 60px; }
+    #app { max-width: 440px; margin: 0 auto; padding: 24px 16px; }
 
-    /* Tabs */
-    .tabs {
-      display: flex; gap: 6px;
-      background: #f0ece8; border-radius: 12px; padding: 4px;
-      margin-bottom: 22px;
-    }
-    .tab-btn {
-      flex: 1; padding: 8px 4px; border-radius: 9px; border: none;
-      cursor: pointer; font-size: 12px; font-family: inherit;
-      background: transparent; color: #9b8d84;
-      transition: all 0.15s;
-    }
-    .tab-btn.active {
-      background: #fff; color: #3d3530; font-weight: 700;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
+    header { text-align: center; margin-bottom: 22px; }
+    header .emoji { font-size: 30px; display: block; margin-bottom: 4px; }
+    header h1 { font-size: 21px; font-weight: 700; color: #3d3530; letter-spacing: -0.5px; }
+    header p { font-size: 12px; color: #9b8d84; font-style: italic; margin-top: 3px; }
 
-    /* Mode toggle inside scan */
-    .mode-toggle {
-      display: flex; gap: 6px;
-      background: #f0ece8; border-radius: 10px; padding: 3px;
-      margin-bottom: 18px;
-    }
-    .mode-btn {
-      flex: 1; padding: 7px 4px; border-radius: 8px; border: none;
-      cursor: pointer; font-size: 12px; font-family: inherit;
-      background: transparent; color: #9b8d84; transition: all 0.15s;
-    }
-    .mode-btn.active {
-      background: #fff; color: #3d3530; font-weight: 700;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
+    .tabs { display: flex; gap: 4px; background: #f0ece8; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 7px 2px; border-radius: 9px; border: none; cursor: pointer;
+      font-size: 11px; font-family: inherit; background: transparent; color: #9b8d84; transition: all 0.15s; }
+    .tab-btn.active { background: #fff; color: #3d3530; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
-    /* Fields */
+    .mode-toggle { display: flex; gap: 6px; background: #f0ece8; border-radius: 10px; padding: 3px; margin-bottom: 18px; }
+    .mode-btn { flex: 1; padding: 7px 4px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 12px; font-family: inherit; background: transparent; color: #9b8d84; transition: all 0.15s; }
+    .mode-btn.active { background: #fff; color: #3d3530; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
     .field { margin-bottom: 14px; }
-    .field label {
-      display: block; font-size: 12px; color: #7a6e68;
-      margin-bottom: 5px; font-weight: 600; letter-spacing: 0.3px;
-    }
-    .field input, .field textarea {
-      width: 100%; padding: 10px 14px;
-      border: 1.5px solid #e5dfd8; border-radius: 9px;
-      font-size: 14px; font-family: inherit; color: #3d3530;
-      background: #fff; outline: none;
-    }
+    .field label { display: block; font-size: 12px; color: #7a6e68; margin-bottom: 5px; font-weight: 600; letter-spacing: 0.3px; }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #e5dfd8; border-radius: 9px;
+      font-size: 14px; font-family: inherit; color: #3d3530; background: #fff; outline: none; }
     .field textarea { resize: vertical; line-height: 1.5; }
-    .field input:focus, .field textarea:focus {
-      border-color: #c4b8ae;
-    }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: #c4b8ae; }
     .row-fields { display: flex; gap: 10px; }
     .row-fields .field { flex: 1; }
 
-    /* Buttons */
-    .btn-main {
-      width: 100%; padding: 12px; border-radius: 10px; border: none;
-      background: #3d3530; color: #faf9f7;
-      font-size: 14px; font-weight: 600; font-family: inherit;
-      cursor: pointer; margin-top: 4px; transition: background 0.15s;
-    }
-    .btn-main:disabled {
-      background: #e5dfd8; color: #b8afa8; cursor: default;
-    }
-    .btn-ghost {
-      width: 100%; padding: 10px; background: none; border: none;
-      color: #9b8d84; cursor: pointer; font-size: 13px;
-      font-family: inherit; margin-top: 6px;
-    }
+    .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none;
+      background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+    .btn-main:disabled { background: #e5dfd8; color: #b8afa8; cursor: default; }
+    .btn-ghost { width: 100%; padding: 10px; background: none; border: none;
+      color: #9b8d84; cursor: pointer; font-size: 13px; font-family: inherit; margin-top: 6px; }
+    .btn-danger { background: #fff1f2; color: #991b1b; border: 1.5px solid #fca5a5; }
 
-    /* Photo area */
-    .photo-drop {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 8px; padding: 28px 20px;
-      border: 2px dashed #d4cbc3; border-radius: 12px;
-      cursor: pointer; background: #faf9f7; color: #9b8d84;
-      font-size: 13px; font-family: inherit; margin-bottom: 8px;
-      width: 100%; transition: border-color 0.15s;
-    }
+    .photo-drop { display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 22px 20px; border: 2px dashed #d4cbc3; border-radius: 12px;
+      cursor: pointer; background: #faf9f7; color: #9b8d84; font-size: 13px;
+      font-family: inherit; width: 100%; transition: border-color 0.15s; }
     .photo-drop:active { border-color: #a89d94; }
-    .photo-drop .icon { font-size: 32px; }
-    #photo-preview {
-      width: 100%; border-radius: 10px; overflow: hidden;
-      border: 1.5px solid #e5dfd8; margin-bottom: 10px; display: none;
-    }
-    #photo-preview img { width: 100%; display: block; max-height: 200px; object-fit: cover; }
-    .read-summary {
-      background: #f0ece8; border-radius: 10px; padding: 12px 14px;
+    .photo-drop .icon { font-size: 28px; }
+    #photo-preview { width: 100%; border-radius: 10px; overflow: hidden;
+      border: 1.5px solid #e5dfd8; margin-bottom: 10px; display: none; }
+    #photo-preview img { width: 100%; display: block; max-height: 180px; object-fit: cover; }
+    .read-summary { background: #f0ece8; border-radius: 10px; padding: 12px 14px;
       font-size: 13px; color: #7a6e68; margin-bottom: 10px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .btn-small {
-      background: none; border: none; cursor: pointer;
-      color: #b8afa8; font-size: 12px; font-family: inherit;
-    }
+      display: flex; justify-content: space-between; align-items: center; }
+    .btn-small { background: none; border: none; cursor: pointer; color: #b8afa8; font-size: 12px; font-family: inherit; }
 
-    /* Spinner */
-    .spinner {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 10px; padding: 28px; color: #9b8d84; font-size: 13px;
-    }
-    .spin { font-size: 28px; animation: spin 1s linear infinite; display: inline-block; }
+    .spinner { display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: 28px; color: #9b8d84; font-size: 13px; }
+    .spin { font-size: 26px; animation: spin 1s linear infinite; display: inline-block; }
     @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
 
-    /* Result */
-    .result {
-      margin-top: 20px; padding: 18px 20px; border-radius: 14px;
-      animation: fadeUp 0.25s ease;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(8px) }
-      to { opacity: 1; transform: none }
-    }
-    .result-header {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
-    }
-    .result-icon { font-size: 24px; font-weight: 700; }
-    .result-label { font-size: 16px; font-weight: 700; }
+    .result { margin-top: 20px; padding: 16px 18px; border-radius: 14px; animation: fadeUp 0.25s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+    .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .result-icon { font-size: 22px; font-weight: 700; }
+    .result-label { font-size: 15px; font-weight: 700; }
     .result-text { font-size: 13px; line-height: 1.6; opacity: 0.9; }
-
     .result.green { background: #f0faf4; border: 1.5px solid #86efac; color: #166534; }
     .result.red   { background: #fff1f2; border: 1.5px solid #fca5a5; color: #991b1b; }
     .result.amber { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; }
     .result.blue  { background: #eff6ff; border: 1.5px solid #93c5fd; color: #1e40af; }
 
-    /* Footer */
-    .footer-note {
-      font-size: 11px; color: #b8afa8; margin-top: 20px;
-      text-align: center; line-height: 1.5; font-style: italic;
-    }
+    /* Alimentos */
+    .alimentos-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .filter-btn { padding: 5px 12px; border-radius: 20px; border: 1.5px solid #e5dfd8;
+      font-size: 12px; font-family: inherit; cursor: pointer; background: #fff; color: #7a6e68; }
+    .filter-btn.active { background: #3d3530; color: #faf9f7; border-color: #3d3530; }
+    .search-input { flex: 1; min-width: 120px; padding: 7px 12px; border: 1.5px solid #e5dfd8;
+      border-radius: 9px; font-size: 13px; font-family: inherit; color: #3d3530;
+      background: #fff; outline: none; }
+    .cat-header { font-size: 11px; font-weight: 700; color: #9b8d84; letter-spacing: 0.8px;
+      text-transform: uppercase; padding: 14px 0 6px; border-bottom: 1px solid #f0ece8; margin-bottom: 4px; }
+    .alimento-row { display: flex; align-items: center; gap: 10px; padding: 10px 4px;
+      border-bottom: 1px solid #f5f2ef; cursor: pointer; }
+    .alimento-row:active { background: #f5f2ef; border-radius: 8px; }
+    .nivel-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .alimento-info { flex: 1; min-width: 0; }
+    .alimento-nombre { display: block; font-size: 14px; color: #3d3530; font-weight: 600; }
+    .alimento-nota { display: block; font-size: 11px; color: #9b8d84; margin-top: 1px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .edit-icon { color: #c4b8ae; font-size: 18px; flex-shrink: 0; }
+    .btn-nuevo { width: 100%; padding: 10px; border-radius: 10px; border: 1.5px dashed #d4cbc3;
+      background: none; color: #9b8d84; font-size: 13px; font-family: inherit;
+      cursor: pointer; margin-bottom: 14px; }
 
-    /* Install banner */
-    #install-banner {
-      display: none; position: fixed; bottom: 0; left: 0; right: 0;
-      background: #3d3530; color: #faf9f7; padding: 14px 16px;
-      font-size: 13px; font-family: Georgia, serif;
-      justify-content: space-between; align-items: center;
-      box-shadow: 0 -2px 12px rgba(0,0,0,0.15);
-    }
-    #install-banner button {
-      background: #faf9f7; color: #3d3530; border: none;
-      padding: 8px 16px; border-radius: 8px; font-weight: 700;
-      font-family: inherit; cursor: pointer; font-size: 13px;
-    }
-    #install-banner .dismiss {
-      background: none; color: #9b8d84; padding: 8px;
-    }
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 100; align-items: flex-end; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #faf9f7; border-radius: 20px 20px 0 0; padding: 24px 20px 40px;
+      width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.2s ease; }
+    @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+    .modal-title { font-size: 17px; font-weight: 700; color: #3d3530; margin-bottom: 18px; }
+    .modal-handle { width: 36px; height: 4px; background: #e5dfd8; border-radius: 2px; margin: 0 auto 18px; }
+
+    .footer-note { font-size: 11px; color: #b8afa8; margin-top: 20px; text-align: center; line-height: 1.5; font-style: italic; }
+
+    #install-banner { display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: #3d3530; color: #faf9f7; padding: 14px 16px; font-size: 13px;
+      font-family: Georgia, serif; justify-content: space-between; align-items: center;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.15); z-index: 50; }
+    #install-banner button { background: #faf9f7; color: #3d3530; border: none;
+      padding: 8px 16px; border-radius: 8px; font-weight: 700; font-family: inherit; cursor: pointer; font-size: 13px; }
+    #install-banner .dismiss { background: none; color: #9b8d84; padding: 8px; }
 
     .panel { display: none; }
     .panel.active { display: block; }
@@ -195,7 +138,8 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('scan')">📋 Etiqueta</button>
     <button class="tab-btn" onclick="switchTab('describe')">💬 Describir</button>
-    <button class="tab-btn" onclick="switchTab('config')">⚙ Parámetros</button>
+    <button class="tab-btn" onclick="switchTab('alimentos')">🗂 Alimentos</button>
+    <button class="tab-btn" onclick="switchTab('config')">⚙ Config</button>
   </div>
 
   <!-- SCAN -->
@@ -204,11 +148,8 @@
       <button class="mode-btn active" onclick="switchMode('manual')">✏️ Manual</button>
       <button class="mode-btn" onclick="switchMode('photo')">📷 Foto</button>
     </div>
-
     <div id="mode-manual">
-      <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">
-        Ingresá los datos de la tabla nutricional <em>por porción</em>.
-      </p>
+      <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">Ingresá los datos <em>por porción</em> de la tabla nutricional.</p>
       <div class="field"><label>Grasa total por porción (g)</label>
         <input id="grasa" type="text" inputmode="decimal" placeholder="ej: 3,5"></div>
       <div class="field"><label>Grasa saturada por porción (g)</label>
@@ -221,11 +162,8 @@
       </div>
       <button class="btn-main" onclick="handleScan()">Analizar</button>
     </div>
-
     <div id="mode-photo" style="display:none">
-      <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">
-        Sacá o elegí una foto de la tabla nutricional.
-      </p>
+      <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">Sacá o elegí una foto de la tabla nutricional.</p>
       <input type="file" id="file-input-camera" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoFile(this)">
       <input type="file" id="file-input-gallery" accept="image/*" style="display:none" onchange="handlePhotoFile(this)">
       <div id="photo-spinner" style="display:none" class="spinner">
@@ -233,12 +171,10 @@
       </div>
       <div id="photo-btn" style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
         <button class="photo-drop" onclick="document.getElementById('file-input-camera').click()">
-          <span class="icon">📷</span>
-          <span>Sacar foto ahora</span>
+          <span class="icon">📷</span><span>Sacar foto ahora</span>
         </button>
         <button class="photo-drop" onclick="document.getElementById('file-input-gallery').click()">
-          <span class="icon">🖼️</span>
-          <span>Elegir de la galería</span>
+          <span class="icon">🖼️</span><span>Elegir de la galería</span>
         </button>
       </div>
       <div id="photo-preview"><img id="preview-img" src="" alt="etiqueta"></div>
@@ -252,47 +188,98 @@
         <button class="btn-main" onclick="handleScanFromPhoto()">Recalcular</button>
       </div>
     </div>
-
     <div id="result-scan"></div>
   </div>
 
   <!-- DESCRIBE -->
   <div id="panel-describe" class="panel">
-    <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">
-      Describí el alimento: ingredientes, forma de preparación, etc.
-    </p>
+    <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">Describí el alimento: ingredientes, forma de preparación, contexto.</p>
     <div class="field">
-      <textarea id="description" rows="3"
-        placeholder="ej: sushi de merluza con arroz y alga nori, sin mayonesa"></textarea>
+      <textarea id="description" rows="3" placeholder="ej: sushi de merluza con arroz y alga nori, sin mayonesa"></textarea>
     </div>
     <button class="btn-main" id="btn-describe" onclick="handleDescribe()">Consultar</button>
     <div id="result-describe"></div>
   </div>
 
+  <!-- ALIMENTOS -->
+  <div id="panel-alimentos" class="panel">
+    <div class="alimentos-filters">
+      <input class="search-input" type="text" placeholder="🔍 buscar…" oninput="busqueda=this.value;renderAlimentosList()">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="filter-btn active" onclick="setFiltro('todos',this)">Todos</button>
+      <button class="filter-btn" onclick="setFiltro('verde',this)">✓ OK</button>
+      <button class="filter-btn" onclick="setFiltro('amarillo',this)">⚠ Cuidado</button>
+      <button class="filter-btn" onclick="setFiltro('rojo',this)">✕ Evitar</button>
+    </div>
+    <button class="btn-nuevo" onclick="editarAlimento('nuevo')">+ Agregar alimento</button>
+    <div id="alimentos-lista"></div>
+  </div>
+
   <!-- CONFIG -->
   <div id="panel-config" class="panel">
-    <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">
-      Ajustá tus parámetros. Se guardan en este dispositivo.
-    </p>
+    <p style="font-size:13px;color:#7a6e68;margin-bottom:16px;line-height:1.5">Parámetros generales de grasa.</p>
     <div class="row-fields">
       <div class="field"><label>Grasa máx. por porción (g)</label>
         <input id="cfg-grasa" type="text" inputmode="decimal"></div>
       <div class="field"><label>Grasa saturada máx. (g)</label>
         <input id="cfg-grasaSat" type="text" inputmode="decimal"></div>
     </div>
-    <div class="field"><label>🚫 Prohibidos (separados por coma)</label>
-      <textarea id="cfg-prohibidos" rows="4"></textarea></div>
-    <div class="field"><label>⚠ Con cuidado (separados por coma)</label>
-      <textarea id="cfg-advertencias" rows="3"></textarea></div>
-    <div class="field"><label>✓ Permitidos (separados por coma)</label>
-      <textarea id="cfg-permitidos" rows="4"></textarea></div>
-    <div class="field"><label>Notas personales</label>
+    <div class="field"><label>Nota personal</label>
       <input id="cfg-notas" type="text"></div>
-    <button class="btn-main" onclick="saveConfig()">Guardar cambios</button>
-    <button class="btn-ghost" onclick="resetConfig()">Restaurar valores originales</button>
+    <button class="btn-main" onclick="saveConfig()">Guardar</button>
+    <button class="btn-ghost" onclick="resetConfig()">Restaurar todo a valores originales</button>
   </div>
 
   <p class="footer-note" id="footer-note"></p>
+</div>
+
+<!-- Modal editar alimento -->
+<div id="modal-alimento" class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Editar alimento</div>
+    <input type="hidden" id="modal-id">
+    <div class="field"><label>Nombre</label>
+      <input id="modal-nombre" type="text" placeholder="ej: Manteca"></div>
+    <div class="field"><label>Sinónimos (separados por coma)</label>
+      <input id="modal-sinonimos" type="text" placeholder="ej: butter, mantequilla"></div>
+    <div class="row-fields">
+      <div class="field"><label>Categoría</label>
+        <select id="modal-categoria">
+          <option value="proteína">Proteína</option>
+          <option value="lácteo">Lácteo</option>
+          <option value="grasa-saturada">Grasa saturada</option>
+          <option value="grasa-saludable">Grasa saludable</option>
+          <option value="cereal">Cereal/Harina</option>
+          <option value="vegetal">Vegetal</option>
+          <option value="fruta">Fruta</option>
+          <option value="flatulento">Flatulento</option>
+          <option value="irritante">Irritante</option>
+          <option value="alcohol">Alcohol</option>
+          <option value="procesado">Procesado</option>
+          <option value="dulce">Dulce</option>
+          <option value="condimento">Condimento</option>
+          <option value="picante">Picante</option>
+          <option value="infusión">Infusión</option>
+        </select>
+      </div>
+      <div class="field"><label>Nivel</label>
+        <select id="modal-nivel">
+          <option value="verde">✓ Permitido</option>
+          <option value="amarillo">⚠ Con cuidado</option>
+          <option value="rojo">✕ Evitar</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Umbral para bajar un nivel (g de grasa) — opcional</label>
+      <input id="modal-umbral" type="text" inputmode="decimal" placeholder="ej: 3 (por debajo de esto → amarillo)"></div>
+    <div class="field"><label>Nota descriptiva</label>
+      <textarea id="modal-nota" rows="3" placeholder="Por qué es problemático y en qué contexto…"></textarea></div>
+    <button class="btn-main" onclick="guardarAlimento()">Guardar</button>
+    <button id="btn-eliminar" class="btn-ghost btn-danger" style="display:none;margin-top:8px;border-radius:10px;padding:12px" onclick="eliminarAlimento()">Eliminar alimento</button>
+    <button class="btn-ghost" onclick="cerrarModal()">Cancelar</button>
+  </div>
 </div>
 
 <div id="install-banner">
@@ -305,4 +292,4 @@
 
 <script src="app.js"></script>
 </body>
-</html>
+      </html>
