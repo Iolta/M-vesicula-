@@ -18,8 +18,6 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  // Don't cache API calls
-  if (e.request.url.includes("anthropic.com")) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
