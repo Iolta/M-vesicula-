@@ -27,7 +27,6 @@
     .row-fields .field { flex: 1; }
 
     .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
-    .btn-secundario { width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #3d3530; background: #fff; color: #3d3530; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; margin-top: 8px; }
     .btn-ghost { width: 100%; padding: 10px; background: none; border: none; color: #9b8d84; cursor: pointer; font-size: 13px; font-family: inherit; margin-top: 6px; }
     .btn-danger { background: #fff1f2; color: #991b1b; border: 1.5px solid #fca5a5; }
 
@@ -37,7 +36,6 @@
     .result-label { font-size: 15px; font-weight: 700; }
     .result-text { font-size: 13px; line-height: 1.6; opacity: 0.9; margin-top: 8px; }
     .result.green { background: #f0faf4; border: 1.5px solid #86efac; color: #166534; }
-    .result.red   { background: #fff1f2; border: 1.5px solid #fca5a5; color: #991b1b; }
     .result.amber { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; }
 
     /* Estilos del Armador de Platos */
@@ -80,16 +78,22 @@
   </div>
 
   <div id="panel-scan" class="panel active">
-    <p style="font-size: 13px; color: #7a6e68; margin-bottom: 16px; line-height: 1.5;">Ingresá los datos del envase. La app te dirá cuántos gramos exactos podés servirte para no superar tu límite de <span id="limite-visual" style="font-weight:bold; color:#3d3530;">2</span>g de grasa.</p>
+    <p style="font-size: 13px; color: #7a6e68; margin-bottom: 16px; line-height: 1.5;">Completá los datos. La app cruza totales y saturadas para proteger tus límites de <span id="limite-visual" style="font-weight:bold; color:#3d3530;">5</span>g (Total) y <span id="limite-sat-visual" style="font-weight:bold; color:#3d3530;">2</span>g (Saturada).</p>
     
     <div class="row-fields">
-      <div class="field"><label>Tamaño porción envase (g)</label>
+      <div class="field"><label>Tamaño de 1 porción (g)</label>
         <input id="calc-porcion" type="number" step="0.1" inputmode="decimal" placeholder="ej: 30"></div>
-      <div class="field"><label>Grasa en esa porción (g)</label>
-        <input id="calc-grasa" type="number" step="0.1" inputmode="decimal" placeholder="ej: 1.5"></div>
+      <div class="field"><label>Porciones por envase</label>
+        <input id="calc-porciones-envase" type="number" step="0.1" inputmode="decimal" placeholder="ej: 3.5"></div>
+    </div>
+    <div class="row-fields">
+      <div class="field"><label>Grasas Totales (g)</label>
+        <input id="calc-grasa" type="number" step="0.1" inputmode="decimal" placeholder="ej: 4.0"></div>
+      <div class="field"><label>Grasas Saturadas (g)</label>
+        <input id="calc-grasa-sat" type="number" step="0.1" inputmode="decimal" placeholder="ej: 1.5"></div>
     </div>
     
-    <button class="btn-main" onclick="calcularPorcionMaxima()">Calcular cantidad a comer</button>
+    <button class="btn-main" onclick="calcularPorcionMaxima()">Calcular cuánto puedo comer</button>
     <button class="btn-ghost" onclick="limpiarCalculadora()">Limpiar datos</button>
     <div id="result-scan"></div>
   </div>
@@ -125,10 +129,12 @@
 <div id="modal-limites" class="modal-overlay" onclick="if(event.target===this)cerrarModalLimites()">
   <div class="modal">
     <div class="modal-title">Mis Límites Personales</div>
-    <p style="font-size: 13px; color: #666; margin-bottom: 16px;">Definí tu tope máximo de grasa por comida.</p>
-    <div class="field"><label>Límite Grasa (g por comida)</label>
+    <p style="font-size: 13px; color: #666; margin-bottom: 16px;">Definí tu tope máximo por comida para que la app sepa cuándo frenarte.</p>
+    <div class="field"><label>Tope Grasa Total (g)</label>
       <input id="limite-grasa" type="number" step="0.1" inputmode="decimal"></div>
-    <button class="btn-main" onclick="guardarLimites()">Guardar Límite</button>
+    <div class="field"><label>Tope Grasa Saturada (g)</label>
+      <input id="limite-grasa-sat" type="number" step="0.1" inputmode="decimal"></div>
+    <button class="btn-main" onclick="guardarLimites()">Guardar Límites</button>
     <button class="btn-ghost" onclick="cerrarModalLimites()">Cancelar</button>
   </div>
 </div>
