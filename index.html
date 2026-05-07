@@ -6,139 +6,127 @@
   <meta name="theme-color" content="#faf9f7" />
   <title>Mi Vesícula</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Georgia, serif; background: #faf9f7; color: #3d3530; min-height: 100vh; padding-bottom: 60px; }
-    #app { max-width: 440px; margin: 0 auto; padding: 24px 16px; }
-
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
-    header .title-area { display: flex; align-items: center; gap: 8px; }
-    header .emoji { font-size: 26px; }
-    header h1 { font-size: 20px; font-weight: 700; color: #3d3530; letter-spacing: -0.5px; }
-    .btn-icon { background: none; border: none; font-size: 22px; cursor: pointer; color: #7a6e68; }
-
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #faf9f7; color: #3d3530; min-height: 100vh; padding-bottom: 60px; }
+    #app { max-width: 440px; margin: 0 auto; padding: 20px 16px; }
+    
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    header h1 { font-size: 20px; font-weight: 700; color: #3d3530; }
+    
     .tabs { display: flex; gap: 4px; background: #f0ece8; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 10px 2px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-family: inherit; background: transparent; color: #9b8d84; transition: all 0.15s; }
+    .tab-btn { flex: 1; padding: 10px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; background: transparent; color: #9b8d84; font-family: inherit; }
     .tab-btn.active { background: #fff; color: #3d3530; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-
+    
     .field { margin-bottom: 14px; }
     .field label { display: block; font-size: 12px; color: #7a6e68; margin-bottom: 5px; font-weight: 600; }
-    .field input, .field select, .field textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #e5dfd8; border-radius: 9px; font-size: 14px; font-family: inherit; color: #3d3530; background: #fff; outline: none; }
+    .field input { width: 100%; padding: 12px; border: 1.5px solid #e5dfd8; border-radius: 9px; font-size: 14px; outline: none; background: #fff; }
     
-    .search-group { display: flex; gap: 8px; margin-bottom: 15px; }
-    .search-group input { flex: 1; }
+    .search-group { display: flex; gap: 8px; margin-bottom: 10px; }
+    .btn-main { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-camera { background: #e5dfd8; color: #3d3530; padding: 0 15px; border-radius: 10px; border: none; cursor: pointer; font-size: 18px; }
+    
+    /* Lista de resultados de búsqueda */
+    #off-results-list { max-height: 250px; overflow-y: auto; margin-bottom: 15px; border-radius: 10px; }
+    .search-result-item { background: #fff; padding: 12px; border: 1.5px solid #e5dfd8; border-radius: 9px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s; }
+    .search-result-item:active { background: #f0ece8; }
+    .search-result-item strong { display: block; font-size: 14px; color: #3d3530; }
+    .search-result-item small { font-size: 11px; color: #9b8d84; }
 
-    .btn-main { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
-    .btn-main:active { background: #1a1715; }
-    .btn-ghost { width: 100%; padding: 10px; background: none; border: none; color: #9b8d84; cursor: pointer; font-size: 13px; font-family: inherit; margin-top: 6px; }
-    
     .result { margin-top: 20px; padding: 18px; border-radius: 14px; display: none; }
     .result.visible { display: block; }
-    .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-    .result-icon { font-size: 24px; }
-    .result-label { font-size: 16px; font-weight: 700; }
-    .result-text { font-size: 14px; line-height: 1.5; opacity: 0.9; margin-top: 8px; }
-    
     .result.green { background: #f0faf4; border: 1.5px solid #86efac; color: #166534; }
     .result.amber { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; }
     .result.red { background: #fef2f2; border: 1.5px solid #fecaca; color: #991b1b; }
-
-    /* Estilos de Lista */
-    .food-item { padding: 14px; background: #fff; border: 1px solid #e5dfd8; border-radius: 10px; margin-bottom: 10px; }
     
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid #3d3530; }
+    .loader { font-size: 13px; color: #7a6e68; text-align: center; margin-bottom: 10px; display: none; font-style: italic; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
-    .modal { background: #faf9f7; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 440px; }
-
-    .panel { display: none; }
-    .panel.active { display: block; }
-    
-    hr { border: 0; border-top: 1px dashed #d4cbc3; margin: 20px 0; }
-    .loader { font-size: 12px; color: #9b8d84; text-align: center; margin-bottom: 10px; display: none; }
+    .modal { background: #faf9f7; width: 100%; padding: 24px; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="title-area">
-      <span class="emoji">🌿</span>
-      <h1>Mi Vesícula</h1>
-    </div>
-    <button class="btn-icon" onclick="abrirModalLimites()" title="Configurar Límites">⚙️</button>
+    <h1>🌿 Mi Vesícula</h1>
+    <button onclick="abrirModalLimites()" style="background:none; border:none; font-size:22px; cursor:pointer;">⚙️</button>
   </header>
 
   <div class="tabs">
     <button id="tab-scan" class="tab-btn active" onclick="switchTab('scan')">🔍 Buscador</button>
     <button id="tab-menu" class="tab-btn" onclick="switchTab('menu')">🍽️ Mi Plato</button>
-    <button id="tab-alimentos" class="tab-btn" onclick="switchTab('alimentos')">🗂 Lista</button>
   </div>
 
   <div id="panel-scan" class="panel active">
+    <div id="reader"></div>
+    
     <div class="field">
-      <label>Buscar producto comercial (Open Food Facts)</label>
       <div class="search-group">
-        <input id="off-search" type="text" placeholder="Ej: Casancrem, Galletitas...">
-        <button class="btn-main" style="width: auto; padding: 0 15px;" onclick="buscarEnOFF()">Buscar</button>
+        <input id="off-search" type="text" placeholder="Ej: Lays, Casancrem...">
+        <button class="btn-camera" onclick="iniciarEscaneo()" title="Escanear Código">📷</button>
+        <button class="btn-main" style="width:auto; padding: 0 20px;" onclick="buscarEnOFF()">Buscar</button>
       </div>
     </div>
-    
-    <div id="loader-off" class="loader">Buscando en base de datos...</div>
 
-    <hr>
+    <div id="loader-off" class="loader"></div>
+    <div id="off-results-list"></div>
 
-    <p style="font-size: 13px; color: #7a6e68; margin-bottom: 16px;">O carga los datos manualmente (cada 100g/ml):</p>
-    
-    <div class="row-fields" style="display: flex; gap: 10px;">
-      <div class="field" style="flex:1;"><label>Grasa Total (g)</label>
-        <input id="calc-grasa" type="number" step="0.1" inputmode="decimal" placeholder="0.0"></div>
-      <div class="field" style="flex:1;"><label>Grasa Sat. (g)</label>
-        <input id="calc-grasa-sat" type="number" step="0.1" inputmode="decimal" placeholder="0.0"></div>
+    <div style="display: flex; gap: 10px;">
+      <div class="field" style="flex:1;"><label>Grasa Total (100g)</label><input id="calc-grasa" type="number" step="0.1" inputmode="decimal"></div>
+      <div class="field" style="flex:1;"><label>Grasa Sat. (100g)</label><input id="calc-grasa-sat" type="number" step="0.1" inputmode="decimal"></div>
     </div>
-    
-    <button class="btn-main" onclick="calcularPorcionMaxima()">Calcular Porción Segura</button>
-    <button class="btn-ghost" onclick="limpiarCalculadora()">Limpiar datos</button>
 
     <div id="result-scan" class="result">
-      <div class="result-header">
-        <span id="res-icon" class="result-icon"></span>
-        <span id="res-label" class="result-label"></span>
+      <div style="display:flex; align-items:center; gap:8px">
+        <span id="res-icon" style="font-size:24px"></span>
+        <strong id="res-label"></strong>
       </div>
-      <p id="res-text" class="result-text"></p>
+      <p id="res-text" style="font-size:13px; margin-top:8px"></p>
     </div>
+    
+    <button class="btn-main" style="margin-top:15px; background:#7a6e68" onclick="limpiarCalculadora()">Limpiar Todo</button>
   </div>
 
-  <div id="panel-menu" class="panel">
-    <p style="font-size: 14px; color: #7a6e68; text-align: center; margin-top: 40px;">Próximamente: Armador de platos combinados.</p>
+  <div id="panel-menu" class="panel" style="display:none">
+    <p style="text-align:center; color:#7a6e68; margin-top:40px">Próximamente: Armá tu plato combinado.</p>
   </div>
-
-  <div id="panel-alimentos" class="panel">
-    <div class="field">
-      <input id="search-input" type="text" placeholder="🔍 Buscar en mis guardados...">
-    </div>
-    <div id="food-list">
-      </div>
-  </div>
-
 </div>
 
 <div id="modal-limites" class="modal-overlay" onclick="if(event.target===this)cerrarModalLimites()">
   <div class="modal">
-    <div class="modal-title" style="font-weight: bold; margin-bottom: 10px;">Mis Límites por Comida</div>
-    <div class="field"><label>Tope Grasa Total (g)</label>
-      <input id="limite-grasa" type="number" step="0.1" value="5.0"></div>
-    <div class="field"><label>Tope Grasa Saturada (g)</label>
-      <input id="limite-grasa-sat" type="number" step="0.1" value="2.0"></div>
-    <button class="btn-main" onclick="guardarLimites()">Guardar y Cerrar</button>
+    <strong style="font-size:18px; display:block; margin-bottom:15px;">Límites de Seguridad</strong>
+    <div class="field"><label>Grasa Total Máxima (g)</label><input id="limite-grasa" type="number" step="0.1"></div>
+    <div class="field"><label>Grasa Sat. Máxima (g)</label><input id="limite-grasa-sat" type="number" step="0.1"></div>
+    <button class="btn-main" onclick="guardarLimites()">Guardar Configuración</button>
   </div>
 </div>
 
 <script src="app.js"></script>
 <script>
-  // Registro del Service Worker para PWA
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js');
-    });
+  let html5QrCode;
+  function iniciarEscaneo() {
+    const readerDiv = document.getElementById('reader');
+    readerDiv.style.display = 'block';
+    html5QrCode = new Html5Qrcode("reader");
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      (decodedText) => {
+        buscarEnOFF(decodedText);
+        detenerEscaneo();
+      },
+      (errorMessage) => { }
+    ).catch(err => alert("Error de cámara: " + err));
+  }
+  function detenerEscaneo() {
+    if (html5QrCode) {
+      html5QrCode.stop().then(() => {
+        document.getElementById('reader').style.display = 'none';
+      });
+    }
   }
 </script>
 </body>
