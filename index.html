@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="theme-color" content="#faf9f7" />
   <title>Mi Vesícula</title>
+  <link rel="manifest" href="manifest.json">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Georgia, serif; background: #faf9f7; color: #3d3530; min-height: 100vh; padding-bottom: 60px; }
@@ -17,159 +18,128 @@
     .btn-icon { background: none; border: none; font-size: 22px; cursor: pointer; color: #7a6e68; }
 
     .tabs { display: flex; gap: 4px; background: #f0ece8; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 7px 2px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-family: inherit; background: transparent; color: #9b8d84; transition: all 0.15s; }
+    .tab-btn { flex: 1; padding: 10px 2px; border-radius: 9px; border: none; cursor: pointer; font-size: 13px; font-family: inherit; background: transparent; color: #9b8d84; transition: all 0.15s; }
     .tab-btn.active { background: #fff; color: #3d3530; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
     .field { margin-bottom: 14px; }
     .field label { display: block; font-size: 12px; color: #7a6e68; margin-bottom: 5px; font-weight: 600; }
-    .field input, .field select, .field textarea { width: 100%; padding: 10px 14px; border: 1.5px solid #e5dfd8; border-radius: 9px; font-size: 14px; font-family: inherit; color: #3d3530; background: #fff; outline: none; }
-    .row-fields { display: flex; gap: 10px; }
-    .row-fields .field { flex: 1; }
+    .field input, .field select, .field textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #e5dfd8; border-radius: 9px; font-size: 14px; font-family: inherit; color: #3d3530; background: #fff; outline: none; }
+    
+    .search-group { display: flex; gap: 8px; margin-bottom: 15px; }
+    .search-group input { flex: 1; }
 
-    .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
+    .btn-main { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background 0.15s; }
+    .btn-main:active { background: #1a1715; }
     .btn-ghost { width: 100%; padding: 10px; background: none; border: none; color: #9b8d84; cursor: pointer; font-size: 13px; font-family: inherit; margin-top: 6px; }
-    .btn-danger { background: #fff1f2; color: #991b1b; border: 1.5px solid #fca5a5; }
-
-    .result { margin-top: 20px; padding: 16px 18px; border-radius: 14px; }
+    
+    .result { margin-top: 20px; padding: 18px; border-radius: 14px; display: none; }
+    .result.visible { display: block; }
     .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-    .result-icon { font-size: 22px; }
-    .result-label { font-size: 15px; font-weight: 700; }
-    .result-text { font-size: 13px; line-height: 1.6; opacity: 0.9; margin-top: 8px; }
+    .result-icon { font-size: 24px; }
+    .result-label { font-size: 16px; font-weight: 700; }
+    .result-text { font-size: 14px; line-height: 1.5; opacity: 0.9; margin-top: 8px; }
+    
     .result.green { background: #f0faf4; border: 1.5px solid #86efac; color: #166534; }
     .result.amber { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; }
+    .result.red { background: #fef2f2; border: 1.5px solid #fecaca; color: #991b1b; }
 
-    /* Estilos del Armador de Platos */
-    .plato-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fff; border: 1px solid #e5dfd8; border-radius: 8px; margin-bottom: 8px; }
-    .plato-item-info strong { display: block; font-size: 14px; }
-    .plato-item-info span { font-size: 12px; color: #7a6e68; }
-    .btn-remove { background: #fff1f2; color: #991b1b; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-    .plato-total { padding: 16px; background: #3d3530; color: #fff; border-radius: 12px; margin-top: 16px; text-align: center; }
-    .plato-total strong { font-size: 24px; display: block; margin: 4px 0; }
+    /* Estilos de Lista */
+    .food-item { padding: 14px; background: #fff; border: 1px solid #e5dfd8; border-radius: 10px; margin-bottom: 10px; }
     
-    .food-item { padding: 16px; margin: 12px 0; border-radius: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .food-item h3 { margin: 0 0 4px 0; font-size: 15px; }
-    .nivel-verde { background-color: #e8f5e9; border-left: 6px solid #4caf50; }
-    .nivel-amarillo { background-color: #fffde7; border-left: 6px solid #ffeb3b; }
-    .nivel-rojo { background-color: #ffebee; border-left: 6px solid #f44336; }
-
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: flex-end; justify-content: center; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
     .modal-overlay.open { display: flex; }
-    .modal { background: #faf9f7; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; }
-    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+    .modal { background: #faf9f7; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 440px; }
 
     .panel { display: none; }
     .panel.active { display: block; }
+    
+    hr { border: 0; border-top: 1px dashed #d4cbc3; margin: 20px 0; }
+    .loader { font-size: 12px; color: #9b8d84; text-align: center; margin-bottom: 10px; display: none; }
   </style>
 </head>
 <body>
 <div id="app">
   <header>
     <div class="title-area">
-      <span class="emoji">🫀</span>
+      <span class="emoji">🌿</span>
       <h1>Mi Vesícula</h1>
     </div>
     <button class="btn-icon" onclick="abrirModalLimites()" title="Configurar Límites">⚙️</button>
   </header>
 
   <div class="tabs">
-    <button id="tab-scan" class="tab-btn active" onclick="switchTab('scan')">🧮 Etiqueta</button>
+    <button id="tab-scan" class="tab-btn active" onclick="switchTab('scan')">🔍 Buscador</button>
     <button id="tab-menu" class="tab-btn" onclick="switchTab('menu')">🍽️ Mi Plato</button>
     <button id="tab-alimentos" class="tab-btn" onclick="switchTab('alimentos')">🗂 Lista</button>
   </div>
 
   <div id="panel-scan" class="panel active">
-    <p style="font-size: 13px; color: #7a6e68; margin-bottom: 16px; line-height: 1.5;">Completá los datos. La app cruza totales y saturadas para proteger tus límites de <span id="limite-visual" style="font-weight:bold; color:#3d3530;">5</span>g (Total) y <span id="limite-sat-visual" style="font-weight:bold; color:#3d3530;">2</span>g (Saturada).</p>
-    
-    <div class="row-fields">
-      <div class="field"><label>Tamaño de 1 porción (g)</label>
-        <input id="calc-porcion" type="number" step="0.1" inputmode="decimal" placeholder="ej: 30"></div>
-      <div class="field"><label>Porciones por envase</label>
-        <input id="calc-porciones-envase" type="number" step="0.1" inputmode="decimal" placeholder="ej: 3.5"></div>
-    </div>
-    <div class="row-fields">
-      <div class="field"><label>Grasas Totales (g)</label>
-        <input id="calc-grasa" type="number" step="0.1" inputmode="decimal" placeholder="ej: 4.0"></div>
-      <div class="field"><label>Grasas Saturadas (g)</label>
-        <input id="calc-grasa-sat" type="number" step="0.1" inputmode="decimal" placeholder="ej: 1.5"></div>
+    <div class="field">
+      <label>Buscar producto comercial (Open Food Facts)</label>
+      <div class="search-group">
+        <input id="off-search" type="text" placeholder="Ej: Casancrem, Galletitas...">
+        <button class="btn-main" style="width: auto; padding: 0 15px;" onclick="buscarEnOFF()">Buscar</button>
+      </div>
     </div>
     
-    <button class="btn-main" onclick="calcularPorcionMaxima()">Calcular cuánto puedo comer</button>
+    <div id="loader-off" class="loader">Buscando en base de datos...</div>
+
+    <hr>
+
+    <p style="font-size: 13px; color: #7a6e68; margin-bottom: 16px;">O carga los datos manualmente (cada 100g/ml):</p>
+    
+    <div class="row-fields" style="display: flex; gap: 10px;">
+      <div class="field" style="flex:1;"><label>Grasa Total (g)</label>
+        <input id="calc-grasa" type="number" step="0.1" inputmode="decimal" placeholder="0.0"></div>
+      <div class="field" style="flex:1;"><label>Grasa Sat. (g)</label>
+        <input id="calc-grasa-sat" type="number" step="0.1" inputmode="decimal" placeholder="0.0"></div>
+    </div>
+    
+    <button class="btn-main" onclick="calcularPorcionMaxima()">Calcular Porción Segura</button>
     <button class="btn-ghost" onclick="limpiarCalculadora()">Limpiar datos</button>
-    <div id="result-scan"></div>
+
+    <div id="result-scan" class="result">
+      <div class="result-header">
+        <span id="res-icon" class="result-icon"></span>
+        <span id="res-label" class="result-label"></span>
+      </div>
+      <p id="res-text" class="result-text"></p>
+    </div>
   </div>
 
   <div id="panel-menu" class="panel">
-    <div class="field"><label>Buscar alimento para el plato</label>
-      <select id="menu-selector"></select>
-    </div>
-    <div class="row-fields">
-      <div class="field"><label>Cantidad a comer (g)</label>
-        <input id="menu-gramos" type="number" step="1" inputmode="numeric" placeholder="ej: 150"></div>
-    </div>
-    <button class="btn-main" onclick="agregarAlPlato()">Agregar al Plato</button>
-    
-    <div style="margin-top: 24px;">
-      <h3 style="font-size: 14px; margin-bottom: 12px; color: #7a6e68;">Contenido del plato:</h3>
-      <div id="lista-plato"></div>
-      <div id="resumen-plato" class="plato-total" style="display:none;"></div>
-      <button class="btn-ghost" onclick="limpiarPlato()" style="margin-top: 12px;">Vaciar plato</button>
-    </div>
+    <p style="font-size: 14px; color: #7a6e68; text-align: center; margin-top: 40px;">Próximamente: Armador de platos combinados.</p>
   </div>
 
   <div id="panel-alimentos" class="panel">
     <div class="field">
-      <input id="search-input" type="text" placeholder="🔍 Buscar alimento...">
+      <input id="search-input" type="text" placeholder="🔍 Buscar en mis guardados...">
     </div>
-    <button class="btn-main" onclick="abrirModalAlimento()" style="margin-bottom: 14px; background: none; border: 1.5px dashed #d4cbc3; color: #9b8d84;">+ Agregar nuevo</button>
-    <div id="food-list"></div>
+    <div id="food-list">
+      </div>
   </div>
 
 </div>
 
 <div id="modal-limites" class="modal-overlay" onclick="if(event.target===this)cerrarModalLimites()">
   <div class="modal">
-    <div class="modal-title">Mis Límites Personales</div>
-    <p style="font-size: 13px; color: #666; margin-bottom: 16px;">Definí tu tope máximo por comida para que la app sepa cuándo frenarte.</p>
+    <div class="modal-title" style="font-weight: bold; margin-bottom: 10px;">Mis Límites por Comida</div>
     <div class="field"><label>Tope Grasa Total (g)</label>
-      <input id="limite-grasa" type="number" step="0.1" inputmode="decimal"></div>
+      <input id="limite-grasa" type="number" step="0.1" value="5.0"></div>
     <div class="field"><label>Tope Grasa Saturada (g)</label>
-      <input id="limite-grasa-sat" type="number" step="0.1" inputmode="decimal"></div>
-    <button class="btn-main" onclick="guardarLimites()">Guardar Límites</button>
-    <button class="btn-ghost" onclick="cerrarModalLimites()">Cancelar</button>
+      <input id="limite-grasa-sat" type="number" step="0.1" value="2.0"></div>
+    <button class="btn-main" onclick="guardarLimites()">Guardar y Cerrar</button>
   </div>
 </div>
 
-<div id="modal-alimento" class="modal-overlay" onclick="if(event.target===this)cerrarModalAlimento()">
-  <div class="modal">
-    <div class="modal-title" id="modal-title">Alimento</div>
-    <div class="field"><label>Nombre</label>
-      <input id="modal-nombre" type="text"></div>
-    <div class="row-fields">
-      <div class="field"><label>Categoría</label>
-        <select id="modal-categoria">
-          <option value="proteína">Proteína</option>
-          <option value="vegetal">Vegetal</option>
-          <option value="lácteo">Lácteo</option>
-          <option value="cereal">Cereal</option>
-          <option value="grasa">Grasa</option>
-        </select>
-      </div>
-      <div class="field"><label>Semáforo</label>
-        <select id="modal-nivel">
-          <option value="verde">Permitido</option>
-          <option value="amarillo">Cuidado</option>
-          <option value="rojo">Evitar</option>
-        </select>
-      </div>
-    </div>
-    <div class="field"><label>Grasa estimada cada 100g (Opcional)</label>
-      <input id="modal-grasa100" type="number" step="0.1" inputmode="decimal" placeholder="ej: 2.5"></div>
-    <button class="btn-main" onclick="guardarAlimento()">Guardar Alimento</button>
-    <button id="btn-eliminar" class="btn-danger" style="display:none; width:100%; padding:12px; border-radius:10px; margin-top:8px;" onclick="eliminarAlimento()">Eliminar</button>
-    <button class="btn-ghost" onclick="cerrarModalAlimento()">Cancelar</button>
-  </div>
-</div>
-
-<script src="app.js?v=3"></script>
+<script src="app.js"></script>
+<script>
+  // Registro del Service Worker para PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
 </body>
 </html>
