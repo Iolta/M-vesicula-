@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="theme-color" content="#faf9f7" />
   <title>Mi Vesícula</title>
-  <link rel="manifest" href="manifest.json">
+  
+  <link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Control%20de%20Grasas%22%2C%22short_name%22%3A%22Vesicula%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23faf9f7%22%2C%22theme_color%22%3A%22%233d3530%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2720%27%20fill%3D%27%233d3530%27%2F%3E%3Ctext%20x%3D%2750%25%27%20y%3D%2750%25%27%20dominant-baseline%3D%27central%27%20text-anchor%3D%27middle%27%20font-size%3D%2770%27%3E%F0%9F%8F%B7%EF%B8%8F%3C%2Ftext%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D'>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #faf9f7; color: #3d3530; min-height: 100vh; padding-bottom: 60px; }
@@ -27,13 +30,10 @@
     .btn-main { width: 100%; padding: 14px; border-radius: 10px; border: none; background: #3d3530; color: #faf9f7; font-size: 14px; font-weight: 600; cursor: pointer; }
     .btn-camera { background: #e5dfd8; color: #3d3530; padding: 0 15px; border-radius: 10px; border: none; cursor: pointer; font-size: 18px; }
     
-    /* Lista de resultados de búsqueda */
     #off-results-list { max-height: 250px; overflow-y: auto; margin-bottom: 15px; border-radius: 10px; }
     .search-result-item { background: #fff; padding: 12px; border: 1.5px solid #e5dfd8; border-radius: 9px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s; }
     .search-result-item:active { background: #f0ece8; }
-    .search-result-item strong { display: block; font-size: 14px; color: #3d3530; }
-    .search-result-item small { font-size: 11px; color: #9b8d84; }
-
+    
     .result { margin-top: 20px; padding: 18px; border-radius: 14px; display: none; }
     .result.visible { display: block; }
     .result.green { background: #f0faf4; border: 1.5px solid #86efac; color: #166534; }
@@ -45,7 +45,7 @@
 
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
-    .modal { background: #faf9f7; width: 100%; padding: 24px; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 12px rgba(0,0,0,0.1); }
+    .modal { background: #faf9f7; width: 100%; padding: 24px; border-radius: 20px 20px 0 0; }
   </style>
 </head>
 <body>
@@ -62,7 +62,6 @@
 
   <div id="panel-scan" class="panel active">
     <div id="reader"></div>
-    
     <div class="field">
       <div class="search-group">
         <input id="off-search" type="text" placeholder="Ej: Lays, Casancrem...">
@@ -70,7 +69,6 @@
         <button class="btn-main" style="width:auto; padding: 0 20px;" onclick="buscarEnOFF()">Buscar</button>
       </div>
     </div>
-
     <div id="loader-off" class="loader"></div>
     <div id="off-results-list"></div>
 
@@ -86,7 +84,6 @@
       </div>
       <p id="res-text" style="font-size:13px; margin-top:8px"></p>
     </div>
-    
     <button class="btn-main" style="margin-top:15px; background:#7a6e68" onclick="limpiarCalculadora()">Limpiar Todo</button>
   </div>
 
@@ -104,7 +101,7 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="app.js?v=1.2"></script>
 <script>
   let html5QrCode;
   function iniciarEscaneo() {
@@ -127,6 +124,11 @@
         document.getElementById('reader').style.display = 'none';
       });
     }
+  }
+
+  // Registrar un Service Worker vacío para habilitar el botón de instalación PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ZW50ID0+IHsgfSk7').catch(() => {});
   }
 </script>
 </body>
