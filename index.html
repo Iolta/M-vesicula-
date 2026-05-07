@@ -40,7 +40,7 @@
     .result.amber { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; }
     .result.red { background: #fef2f2; border: 1.5px solid #fecaca; color: #991b1b; }
     
-    #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid #3d3530; }
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; margin-bottom: 15px; display: none; border: 2px solid #3d3530; background: #000; }
     .loader { font-size: 13px; color: #7a6e68; text-align: center; margin-bottom: 10px; display: none; font-style: italic; }
 
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; }
@@ -62,6 +62,7 @@
 
   <div id="panel-scan" class="panel active">
     <div id="reader"></div>
+    
     <div class="field">
       <div class="search-group">
         <input id="off-search" type="text" placeholder="Ej: Lays, Casancrem...">
@@ -69,6 +70,7 @@
         <button class="btn-main" style="width:auto; padding: 0 20px;" onclick="buscarEnOFF()">Buscar</button>
       </div>
     </div>
+    
     <div id="loader-off" class="loader"></div>
     <div id="off-results-list"></div>
 
@@ -104,27 +106,50 @@
 <script src="app.js?v=1.2"></script>
 <script>
   let html5QrCode;
+
   function iniciarEscaneo() {
+    // Verificamos si la librería cargó bien de internet
+    if (typeof Html5Qrcode === 'undefined') {
+      alert("La cámara se está cargando. Dale un segundo y volvé a tocar el botón.");
+      return;
+    }
+
     const readerDiv = document.getElementById('reader');
     readerDiv.style.display = 'block';
-    html5QrCode = new Html5Qrcode("reader");
+    
+    // Solo creamos la instancia si no existe
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
     html5QrCode.start(
-      { facingMode: "environment" }, 
+      { facingMode: "environment" }, // Usa la cámara trasera
       { fps: 10, qrbox: { width: 250, height: 150 } },
       (decodedText) => {
-        buscarEnOFF(decodedText);
+        // Éxito al leer el código
         detenerEscaneo();
+        document.getElementById('off-search').value = decodedText;
+        buscarEnOFF(decodedText);
       },
-      (errorMessage) => { }
-    ).catch(err => alert("Error de cámara: " + err));
+      (errorMessage) => { 
+        // Errores de lectura cuadro por cuadro (se ignoran)
+      }
+    ).catch(err => {
+      // Error al abrir la cámara (ej. falta de permisos)
+      readerDiv.style.display = 'none';
+      alert("Para escanear, necesitás darle permiso a la cámara desde las opciones de tu navegador o celular.");
+    });
   }
+
   function detenerEscaneo() {
     if (html5QrCode) {
       html5QrCode.stop().then(() => {
         document.getElementById('reader').style.display = 'none';
+      }).catch(err => {
+        document.getElementById('reader').style.display = 'none';
       });
     }
   }
-
-  // Registrar un Service Worker vacío para habilitar el botón de instalación PWA
-  if ('serviceWorker' in navigator)
+</script>
+</body>
+</html>
