@@ -1,87 +1,98 @@
 // --- CONFIGURACIÓN Y ESTADO ---
-let limites = {
-    total: 5.0,
-    sat: 2.0
-};
+let limites = { total: 5.0, sat: 2.0 };
 
-// Cargar límites al iniciar
 window.onload = () => {
     const guardados = localStorage.getItem('mis_limites_vesicula');
-    if (guardados) {
-        limites = JSON.parse(guardados);
-    }
-    // Actualizar los inputs del modal con los valores actuales
+    if (guardados) limites = JSON.parse(guardados);
     document.getElementById('limite-grasa').value = limites.total;
     document.getElementById('limite-grasa-sat').value = limites.sat;
 };
 
 // --- NAVEGACIÓN ---
 function switchTab(tab) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     
-    document.getElementById(`panel-${tab}`).classList.add('active');
+    document.getElementById(`panel-${tab}`).style.display = 'block';
     document.getElementById(`tab-${tab}`).classList.add('active');
 }
 
 // --- LÓGICA DE LÍMITES ---
-function abrirModalLimites() {
-    document.getElementById('modal-limites').classList.add('open');
-}
-
-function cerrarModalLimites() {
-    document.getElementById('modal-limites').classList.remove('open');
-}
+function abrirModalLimites() { document.getElementById('modal-limites').classList.add('open'); }
+function cerrarModalLimites() { document.getElementById('modal-limites').classList.remove('open'); }
 
 function guardarLimites() {
     limites.total = parseFloat(document.getElementById('limite-grasa').value) || 5.0;
     limites.sat = parseFloat(document.getElementById('limite-grasa-sat').value) || 2.0;
-    
     localStorage.setItem('mis_limites_vesicula', JSON.stringify(limites));
     cerrarModalLimites();
-    alert("Límites actualizados correctamente.");
+    if(document.getElementById('calc-grasa').value) calcularPorcionMaxima();
 }
 
 // --- BÚSQUEDA EN OPEN FOOD FACTS ---
-async function buscarEnOFF() {
-    const query = document.getElementById('off-search').value;
+async function buscarEnOFF(barcode = null) {
+    const query = barcode || document.getElementById('off-search').value;
     const loader = document.getElementById('loader-off');
+    const listaResultados = document.getElementById('off-results-list');
     
-    if (query.length < 3) {
-        alert("Por favor, escribe al menos 3 letras.");
-        return;
-    }
+    if (!barcode && query.length < 3) return;
 
     loader.style.display = "block";
+    loader.innerText = "Buscando productos...";
+    listaResultados.innerHTML = ""; 
 
     try {
-        // Buscamos productos priorizando Argentina
-        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5&cc=ar`;
+        const url = barcode 
+            ? `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`
+            : `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=8&cc=ar`;
+        
         const response = await fetch(url);
         const data = await response.json();
 
-        if (data.products && data.products.length > 0) {
-            const p = data.products[0];
-            
-            // OFF entrega valores cada 100g por defecto
-            const grasaTotal = p.nutriments['fat_100g'] || 0;
-            const grasaSat = p.nutriments['saturated-fat_100g'] || 0;
-            const nombre = p.product_name || "Producto";
-
-            document.getElementById('calc-grasa').value = grasaTotal;
-            document.getElementById('calc-grasa-sat').value = grasaSat;
-            
-            alert(`Cargado: ${nombre}\n(Grasas por cada 100g)`);
-            calcularPorcionMaxima();
+        if (barcode) {
+            if (data.product) {
+                cargarProducto(data.product);
+                loader.style.display = "none";
+            } else {
+                loader.innerText = "Código no encontrado.";
+            }
         } else {
-            alert("No se encontró el producto. Prueba con otra marca o carga manual.");
+            if (data.products && data.products.length > 0) {
+                loader.innerText = "Seleccioná el correcto:";
+                data.products.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'search-result-item';
+                    item.innerHTML = `
+                        <strong>${p.product_name || 'Sin nombre'}</strong>
+                        <small>${p.brands || 'Marca desconocida'} | ${p.quantity || ''}</small>
+                    `;
+                    item.onclick = () => {
+                        cargarProducto(p);
+                        listaResultados.innerHTML = "";
+                        loader.style.display = "none";
+                    };
+                    listaResultados.appendChild(item);
+                });
+            } else {
+                loader.innerText = "No se encontraron resultados.";
+            }
         }
     } catch (error) {
+        loader.innerText = "Error de conexión.";
         console.error(error);
-        alert("Error de conexión. Intenta de nuevo.");
-    } finally {
-        loader.style.display = "none";
     }
+}
+
+function cargarProducto(p) {
+    // OFF usa fat_100g y saturated-fat_100g
+    const grasaTotal = p.nutriments['fat_100g'] || 0;
+    const grasaSat = p.nutriments['saturated-fat_100g'] || 0;
+    
+    document.getElementById('calc-grasa').value = grasaTotal;
+    document.getElementById('calc-grasa-sat').value = grasaSat;
+    document.getElementById('off-search').value = p.product_name || "";
+    
+    calcularPorcionMaxima();
 }
 
 // --- CÁLCULO DE PORCIÓN SEGURA ---
@@ -90,30 +101,25 @@ function calcularPorcionMaxima() {
     const gSatAlimento = parseFloat(document.getElementById('calc-grasa-sat').value) || 0;
 
     const resultDiv = document.getElementById('result-scan');
-    const resIcon = document.getElementById('res-icon');
-    const resLabel = document.getElementById('res-label');
-    const resText = document.getElementById('res-text');
+    resultDiv.classList.add('visible');
 
-    // Si el alimento no tiene grasa, es libre (ponemos un límite lógico de 500g por ej)
     if (gTotalAlimento === 0 && gSatAlimento === 0) {
-        mostrarResultado("green", "✅", "Alimento Libre", "Este alimento no contiene grasas reportadas. Podés consumirlo con tranquilidad.");
+        mostrarResultado("green", "✅", "Alimento Libre", "Este producto no tiene grasas detectadas.");
         return;
     }
 
-    // Cálculo: (Límite / Grasa en 100g) * 100
-    // Calculamos para ambos límites y nos quedamos con el más restrictivo
-    let maxPorTotal = (limites.total / gTotalAlimento) * 100;
+    // (Límite / Contenido en 100g) * 100
+    let maxPorTotal = gTotalAlimento > 0 ? (limites.total / gTotalAlimento) * 100 : Infinity;
     let maxPorSat = gSatAlimento > 0 ? (limites.sat / gSatAlimento) * 100 : Infinity;
-
+    
     let porcionSegura = Math.floor(Math.min(maxPorTotal, maxPorSat));
 
-    // Determinar color del semáforo basado en la porción resultante
     if (porcionSegura >= 150) {
-        mostrarResultado("green", "✅", `Porción Segura: ${porcionSegura}g`, `Podés comer una porción generosa. El límite es de ${porcionSegura}g para no exceder tus ${limites.total}g de grasa.`);
-    } else if (porcionSegura >= 50) {
-        mostrarResultado("amber", "⚠️", `Porción Moderada: ${porcionSegura}g`, `Cuidado. No deberías exceder los ${porcionSegura}g en esta comida.`);
+        mostrarResultado("green", "✅", `Seguro: ${porcionSegura}g`, `Podés comer una porción normal (hasta ${porcionSegura}g).`);
+    } else if (porcionSegura >= 60) {
+        mostrarResultado("amber", "⚠️", `Moderado: ${porcionSegura}g`, `Cuidado. No te pases de los ${porcionSegura}g.`);
     } else {
-        mostrarResultado("red", "🚫", `Porción Muy Limitada: ${porcionSegura}g`, `Riesgo alto. Solo podrías comer ${porcionSegura}g, lo cual es muy poco. Mejor evitar o buscar alternativa.`);
+        mostrarResultado("red", "🚫", `Riesgo: ${porcionSegura}g`, `Cantidad permitida muy baja (${porcionSegura}g). Mejor evitar.`);
     }
 }
 
@@ -129,5 +135,7 @@ function limpiarCalculadora() {
     document.getElementById('calc-grasa').value = '';
     document.getElementById('calc-grasa-sat').value = '';
     document.getElementById('off-search').value = '';
+    document.getElementById('off-results-list').innerHTML = '';
+    document.getElementById('loader-off').style.display = 'none';
     document.getElementById('result-scan').classList.remove('visible');
 }
