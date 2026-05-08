@@ -37,6 +37,11 @@ async function buscarEnOFF(barcode = null) {
     
     if (!barcode && query.length < 3) return;
 
+    // FIX: Limpiar datos viejos apenas empieza una nueva búsqueda
+    document.getElementById('calc-grasa').value = '';
+    document.getElementById('calc-grasa-sat').value = '';
+    document.getElementById('result-scan').classList.remove('visible');
+
     loader.style.display = "block";
     loader.innerText = "Buscando productos...";
     listaResultados.innerHTML = ""; 
@@ -54,7 +59,7 @@ async function buscarEnOFF(barcode = null) {
                 cargarProducto(data.product);
                 loader.style.display = "none";
             } else {
-                loader.innerText = "Código no encontrado.";
+                loader.innerText = "Código no encontrado. Podés cargar los datos a mano.";
             }
         } else {
             if (data.products && data.products.length > 0) {
@@ -78,19 +83,18 @@ async function buscarEnOFF(barcode = null) {
             }
         }
     } catch (error) {
-        loader.innerText = "Error de conexión.";
+        loader.innerText = "Error de conexión o producto inexistente.";
         console.error(error);
     }
 }
 
 function cargarProducto(p) {
-    // OFF usa fat_100g y saturated-fat_100g
     const grasaTotal = p.nutriments['fat_100g'] || 0;
     const grasaSat = p.nutriments['saturated-fat_100g'] || 0;
     
     document.getElementById('calc-grasa').value = grasaTotal;
     document.getElementById('calc-grasa-sat').value = grasaSat;
-    document.getElementById('off-search').value = p.product_name || "";
+    document.getElementById('off-search').value = p.product_name || document.getElementById('off-search').value;
     
     calcularPorcionMaxima();
 }
@@ -108,7 +112,6 @@ function calcularPorcionMaxima() {
         return;
     }
 
-    // (Límite / Contenido en 100g) * 100
     let maxPorTotal = gTotalAlimento > 0 ? (limites.total / gTotalAlimento) * 100 : Infinity;
     let maxPorSat = gSatAlimento > 0 ? (limites.sat / gSatAlimento) * 100 : Infinity;
     
