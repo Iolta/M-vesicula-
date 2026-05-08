@@ -123,8 +123,249 @@
   </div>
 </div>
 
-<script src="app.js?v=1.6"></script>
 <script>
+  // --- Limpiador de Caché / Service Workers ---
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for(let registration of registrations) { registration.unregister(); }
+    });
+  }
+
+  // --- ESTADO GLOBAL ---
+  let limites = { total: 5.0, sat: 2.0 };
+  let plato = [];
+
+  // --- INICIO ---
+  window.onload = () => {
+      const guardados = localStorage.getItem('mis_limites_vesicula');
+      if (guardados) limites = JSON.parse(guardados);
+      document.getElementById('limite-grasa').value = limites.total;
+      document.getElementById('limite-grasa-sat').value = limites.sat;
+      
+      const platoGuardado = localStorage.getItem('mi_plato_vesicula');
+      if (platoGuardado) {
+          try { plato = JSON.parse(platoGuardado); } 
+          catch(e) { plato = []; }
+      }
+      renderizarPlato();
+  };
+
+  // --- NAVEGACIÓN ---
+  function switchTab(tab) {
+      document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      
+      const panel = document.getElementById(`panel-${tab}`);
+      const btn = document.getElementById(`tab-${tab}`);
+      
+      if(panel) panel.style.display = 'block';
+      if(btn) btn.classList.add('active');
+
+      if(tab === 'menu') renderizarPlato();
+  }
+
+  // --- CONFIGURACIÓN ---
+  function abrirModalLimites() { document.getElementById('modal-limites').classList.add('open'); }
+  function cerrarModalLimites() { document.getElementById('modal-limites').classList.remove('open'); }
+
+  function guardarLimites() {
+      limites.total = parseFloat(document.getElementById('limite-grasa').value) || 5.0;
+      limites.sat = parseFloat(document.getElementById('limite-grasa-sat').value) || 2.0;
+      localStorage.setItem('mis_limites_vesicula', JSON.stringify(limites));
+      cerrarModalLimites();
+      renderizarPlato();
+  }
+
+  // --- BUSCADOR ---
+  async function buscarEnOFF(barcode = null) {
+      const query = barcode || document.getElementById('off-search').value;
+      const loader = document.getElementById('loader-off');
+      const listaResultados = document.getElementById('off-results-list');
+      
+      if (!barcode && query.length < 3) return;
+
+      limpiarCalculadora(false);
+
+      loader.style.display = "block";
+      loader.innerText = "Buscando...";
+      listaResultados.innerHTML = ""; 
+
+      try {
+          const url = barcode 
+              ? `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`
+              : `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=8&cc=ar`;
+          
+          const response = await fetch(url);
+          const data = await response.json();
+
+          if (barcode) {
+              if (data.product) {
+                  cargarProducto(data.product);
+                  loader.style.display = "none";
+              } else {
+                  loader.innerText = "No encontrado. Cargalo manual.";
+              }
+          } else {
+              if (data.products && data.products.length > 0) {
+                  loader.innerText = "Seleccioná:";
+                  data.products.forEach(p => {
+                      const item = document.createElement('div');
+                      item.className = 'search-result-item';
+                      item.innerHTML = `<strong>${p.product_name || 'Sin nombre'}</strong><small>${p.brands || ''}</small>`;
+                      item.onclick = () => { cargarProducto(p); listaResultados.innerHTML = ""; loader.style.display = "none"; };
+                      listaResultados.appendChild(item);
+                  });
+              } else { loader.innerText = "Sin resultados."; }
+          }
+      } catch (error) { loader.innerText = "Error de conexión."; }
+  }
+
+  function cargarProducto(p) {
+      const grasaTotal = p.nutriments['fat_100g'] || 0;
+      const grasaSat = p.nutriments['saturated-fat_100g'] || 0;
+      document.getElementById('calc-grasa').value = grasaTotal;
+      document.getElementById('calc-grasa-sat').value = grasaSat;
+      document.getElementById('off-search').value = p.product_name || "";
+      calcularPorcionMaxima();
+  }
+
+  function calcularPorcionMaxima() {
+      const gTotalAlimento = parseFloat(document.getElementById('calc-grasa').value) || 0;
+      const gSatAlimento = parseFloat(document.getElementById('calc-grasa-sat').value) || 0;
+      const resultDiv = document.getElementById('result-scan');
+      
+      resultDiv.classList.add('visible');
+
+      if (gTotalAlimento === 0 && gSatAlimento === 0) {
+          mostrarResultado("green", "✅", "Alimento Libre", "No tiene grasas detectadas.");
+          document.getElementById('porcion-comer').value = 100;
+          return;
+      }
+
+      let maxPorTotal = gTotalAlimento > 0 ? (limites.total / gTotalAlimento) * 100 : 999;
+      let maxPorSat = gSatAlimento > 0 ? (limites.sat / gSatAlimento) * 100 : 999;
+      let porcionSegura = Math.floor(Math.min(maxPorTotal, maxPorSat));
+
+      document.getElementById('porcion-comer').value = (porcionSegura > 0 && porcionSegura < 999) ? porcionSegura : 100;
+
+      if (porcionSegura >= 150) mostrarResultado("green", "✅", `Seguro: ${porcionSegura}g`, `Máximo ${porcionSegura}g.`);
+      else if (porcionSegura >= 60) mostrarResultado("amber", "⚠️", `Moderado: ${porcionSegura}g`, `Límite ${porcionSegura}g.`);
+      else mostrarResultado("red", "🚫", `Riesgo: ${porcionSegura}g`, `Cuidado: solo ${porcionSegura}g.`);
+  }
+
+  function mostrarResultado(clase, icono, titulo, descripcion) {
+      const res = document.getElementById('result-scan');
+      res.className = `result visible ${clase}`;
+      document.getElementById('res-icon').innerText = icono;
+      document.getElementById('res-label').innerText = titulo;
+      document.getElementById('res-text').innerText = descripcion;
+  }
+
+  // --- LÓGICA DE MI PLATO ---
+  function agregarAlPlato() {
+      const nombre = document.getElementById('off-search').value || "Producto";
+      const grasaTotal100 = parseFloat(document.getElementById('calc-grasa').value) || 0;
+      const grasaSat100 = parseFloat(document.getElementById('calc-grasa-sat').value) || 0;
+      const porcionElegida = parseFloat(document.getElementById('porcion-comer').value) || 0;
+
+      if (porcionElegida <= 0) {
+          alert("Ingresá los gramos en la calculadora.");
+          return;
+      }
+
+      const item = {
+          id: Date.now(),
+          nombre: nombre,
+          porcion: porcionElegida,
+          grasaTotal: (grasaTotal100 * porcionElegida) / 100,
+          grasaSat: (grasaSat100 * porcionElegida) / 100
+      };
+
+      plato.push(item);
+      localStorage.setItem('mi_plato_vesicula', JSON.stringify(plato));
+      
+      switchTab('menu'); 
+  }
+
+  function renderizarPlato() {
+      const lista = document.getElementById('lista-plato');
+      const resumen = document.getElementById('resumen-plato');
+      const btnVaciar = document.getElementById('btn-vaciar-plato');
+      
+      if (!lista || !resumen) return;
+
+      lista.innerHTML = "";
+      
+      if (plato.length === 0) {
+          resumen.className = "result visible green";
+          document.getElementById('plato-icon').innerText = "🍽️";
+          document.getElementById('plato-label').innerText = "Plato Vacío";
+          document.getElementById('plato-text').innerText = "Agregá alimentos desde el buscador.";
+          btnVaciar.style.display = "none";
+          return;
+      }
+
+      btnVaciar.style.display = "block";
+      let totalG = 0;
+      let totalS = 0;
+
+      plato.forEach(item => {
+          totalG += item.grasaTotal;
+          totalS += item.grasaSat;
+
+          const div = document.createElement('div');
+          div.className = "plate-item";
+          div.innerHTML = `
+              <div class="plate-item-info">
+                  <strong>${item.nombre} (${item.porcion}g)</strong>
+                  <small>Grasa: ${item.grasaTotal.toFixed(1)}g | Sat: ${item.grasaSat.toFixed(1)}g</small>
+              </div>
+              <button class="btn-delete" onclick="eliminarDelPlato(${item.id})">🗑️</button>
+          `;
+          lista.appendChild(div);
+      });
+
+      if (totalG > limites.total || totalS > limites.sat) {
+          resumen.className = "result visible red";
+          document.getElementById('plato-icon').innerText = "🚫";
+          document.getElementById('plato-label').innerText = "¡Exceso de Grasa!";
+      } else if (totalG > limites.total * 0.8 || totalS > limites.sat * 0.8) {
+          resumen.className = "result visible amber";
+          document.getElementById('plato-icon').innerText = "⚠️";
+          document.getElementById('plato-label').innerText = "Plato al Límite";
+      } else {
+          resumen.className = "result visible green";
+          document.getElementById('plato-icon').innerText = "✅";
+          document.getElementById('plato-label').innerText = "Plato Seguro";
+      }
+
+      document.getElementById('plato-text').innerText = `Total: ${totalG.toFixed(1)}g grasa / ${totalS.toFixed(1)}g saturada.`;
+  }
+
+  function eliminarDelPlato(id) {
+      plato = plato.filter(item => item.id !== id);
+      localStorage.setItem('mi_plato_vesicula', JSON.stringify(plato));
+      renderizarPlato();
+  }
+
+  function vaciarPlato() {
+      if (confirm("¿Vaciar plato?")) {
+          plato = [];
+          localStorage.removeItem('mi_plato_vesicula');
+          renderizarPlato();
+      }
+  }
+
+  function limpiarCalculadora(todo = true) {
+      document.getElementById('calc-grasa').value = '';
+      document.getElementById('calc-grasa-sat').value = '';
+      if(todo) document.getElementById('off-search').value = '';
+      document.getElementById('off-results-list').innerHTML = '';
+      document.getElementById('loader-off').style.display = 'none';
+      document.getElementById('result-scan').classList.remove('visible');
+  }
+
+  // --- CÁMARA ---
   let html5QrCode;
   function iniciarEscaneo() {
     const readerDiv = document.getElementById('reader');
