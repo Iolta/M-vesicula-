@@ -47,6 +47,9 @@
     .plate-item-info { flex: 1; }
     .btn-delete { background: #fef2f2; color: #991b1b; border: none; padding: 8px; border-radius: 8px; font-size: 14px; cursor: pointer; }
 
+    .quick-btn { padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 1px solid #e5dfd8; background: #fff; cursor: pointer; color: #3d3530; font-weight: 500; }
+    .quick-btn:active { background: #f0ece8; }
+
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; }
     .modal-overlay.open { display: flex; }
     .modal { background: #faf9f7; width: 100%; padding: 24px; border-radius: 20px 20px 0 0; }
@@ -91,10 +94,18 @@
       
       <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">
         <label style="font-size: 11px; font-weight: 700; color: #7a6e68; display: block; margin-bottom: 5px;">PORCIÓN A COMER (g)</label>
+        
         <div style="display: flex; gap: 8px;">
-          <input id="porcion-comer" type="number" value="50" style="width: 80px; padding: 8px; border-radius: 8px; border: 1.5px solid #e5dfd8;">
+          <input id="porcion-comer" type="number" value="50" style="width: 80px; padding: 8px; border-radius: 8px; border: 1.5px solid #e5dfd8; font-size: 16px;">
           <button class="btn-main" style="padding: 8px; background: #3d3530;" onclick="agregarAlPlato()">Añadir al Plato</button>
         </div>
+        
+        <div style="display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; padding-bottom: 4px;">
+          <button type="button" class="quick-btn" onclick="sumarPorcion(5)">🥄 Té (+5g)</button>
+          <button type="button" class="quick-btn" onclick="sumarPorcion(15)">🥄 Sopera (+15g)</button>
+          <button type="button" class="quick-btn" onclick="sumarPorcion(0)">🔄 Cero</button>
+        </div>
+        
       </div>
     </div>
     <button class="btn-main" style="margin-top:15px; background:#7a6e68" onclick="limpiarCalculadora()">Limpiar Todo</button>
@@ -124,18 +135,15 @@
 </div>
 
 <script>
-  // --- Limpiador de Caché / Service Workers ---
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
       for(let registration of registrations) { registration.unregister(); }
     });
   }
 
-  // --- ESTADO GLOBAL ---
   let limites = { total: 5.0, sat: 2.0 };
   let plato = [];
 
-  // --- INICIO ---
   window.onload = () => {
       const guardados = localStorage.getItem('mis_limites_vesicula');
       if (guardados) limites = JSON.parse(guardados);
@@ -150,21 +158,16 @@
       renderizarPlato();
   };
 
-  // --- NAVEGACIÓN ---
   function switchTab(tab) {
       document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      
       const panel = document.getElementById(`panel-${tab}`);
       const btn = document.getElementById(`tab-${tab}`);
-      
       if(panel) panel.style.display = 'block';
       if(btn) btn.classList.add('active');
-
       if(tab === 'menu') renderizarPlato();
   }
 
-  // --- CONFIGURACIÓN ---
   function abrirModalLimites() { document.getElementById('modal-limites').classList.add('open'); }
   function cerrarModalLimites() { document.getElementById('modal-limites').classList.remove('open'); }
 
@@ -176,7 +179,6 @@
       renderizarPlato();
   }
 
-  // --- BUSCADOR ---
   async function buscarEnOFF(barcode = null) {
       const query = barcode || document.getElementById('off-search').value;
       const loader = document.getElementById('loader-off');
@@ -199,12 +201,8 @@
           const data = await response.json();
 
           if (barcode) {
-              if (data.product) {
-                  cargarProducto(data.product);
-                  loader.style.display = "none";
-              } else {
-                  loader.innerText = "No encontrado. Cargalo manual.";
-              }
+              if (data.product) { cargarProducto(data.product); loader.style.display = "none"; } 
+              else { loader.innerText = "No encontrado. Cargalo manual."; }
           } else {
               if (data.products && data.products.length > 0) {
                   loader.innerText = "Seleccioná:";
@@ -261,7 +259,17 @@
       document.getElementById('res-text').innerText = descripcion;
   }
 
-  // --- LÓGICA DE MI PLATO ---
+  // NUEVA FUNCIÓN: Sumar gramos caseros
+  function sumarPorcion(gramos) {
+      const input = document.getElementById('porcion-comer');
+      if (gramos === 0) {
+          input.value = 0;
+      } else {
+          let actual = parseFloat(input.value) || 0;
+          input.value = actual + gramos;
+      }
+  }
+
   function agregarAlPlato() {
       const nombre = document.getElementById('off-search').value || "Producto";
       const grasaTotal100 = parseFloat(document.getElementById('calc-grasa').value) || 0;
@@ -283,7 +291,6 @@
 
       plato.push(item);
       localStorage.setItem('mi_plato_vesicula', JSON.stringify(plato));
-      
       switchTab('menu'); 
   }
 
@@ -293,7 +300,6 @@
       const btnVaciar = document.getElementById('btn-vaciar-plato');
       
       if (!lista || !resumen) return;
-
       lista.innerHTML = "";
       
       if (plato.length === 0) {
@@ -306,13 +312,11 @@
       }
 
       btnVaciar.style.display = "block";
-      let totalG = 0;
-      let totalS = 0;
+      let totalG = 0; let totalS = 0;
 
       plato.forEach(item => {
           totalG += item.grasaTotal;
           totalS += item.grasaSat;
-
           const div = document.createElement('div');
           div.className = "plate-item";
           div.innerHTML = `
@@ -338,7 +342,6 @@
           document.getElementById('plato-icon').innerText = "✅";
           document.getElementById('plato-label').innerText = "Plato Seguro";
       }
-
       document.getElementById('plato-text').innerText = `Total: ${totalG.toFixed(1)}g grasa / ${totalS.toFixed(1)}g saturada.`;
   }
 
@@ -365,7 +368,6 @@
       document.getElementById('result-scan').classList.remove('visible');
   }
 
-  // --- CÁMARA ---
   let html5QrCode;
   function iniciarEscaneo() {
     const readerDiv = document.getElementById('reader');
